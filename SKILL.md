@@ -247,6 +247,14 @@ python3 scripts/report.py --format sarif
 python3 scripts/report.py --format json
 ```
 
+**Save findings to `Vulnscan_results.md` in the scanned project directory.** Copy the Markdown report output there so the results are co-located with the codebase:
+
+```bash
+cp workspace/reports/report_*.md <target_path>/Vulnscan_results.md
+```
+
+If `workspace/reports/` does not contain the file, write the Markdown report content directly to `<target_path>/Vulnscan_results.md`. This file is the primary human-readable deliverable and must always be created at the end of a full scan.
+
 ---
 
 ## Targeted scan commands

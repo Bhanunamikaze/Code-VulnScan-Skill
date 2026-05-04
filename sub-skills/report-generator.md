@@ -192,3 +192,13 @@ After running report.py, the workspace should contain:
 - `workspace/report_<run_id>.sarif` — SARIF output
 - `workspace/report_<run_id>.json` — JSON summary
 - `workspace/confirmed_findings.json` — machine-readable confirmed findings
+
+## Required: save to Vulnscan_results.md
+
+**Always write the final Markdown report to `Vulnscan_results.md` in the root of the scanned project directory.** This is the primary deliverable.
+
+```bash
+cp workspace/report_<run_id>.md <scanned_project_path>/Vulnscan_results.md
+```
+
+If the report path is not known, write the Markdown content directly to `<scanned_project_path>/Vulnscan_results.md` using the Write tool. The file must exist in the scanned project after every full scan — it is the artifact the user reviews.
