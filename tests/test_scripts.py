@@ -13,7 +13,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from scripts.utils.entropy import shannon_entropy, scan_line_for_secrets, SECRET_PATTERNS
+from scripts.utils.entropy import shannon_entropy, scan_line_for_secrets, SECRET_PATTERNS, B64_CHARS
 from scripts.utils.languages import detect_language, is_test_file
 from scripts.utils.files import enumerate_files, get_snippet
 from scripts.utils.patterns import load_patterns, scan_file_for_candidates
@@ -31,22 +31,25 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 class TestEntropy:
     def test_high_entropy_random_string(self):
-        assert shannon_entropy("aB3$xY9!kQ2#mZ7@") > 3.5
+        # 16 unique base64-safe chars — entropy well above 3.5
+        assert shannon_entropy("aBcDeFgHiJkLmNoP", B64_CHARS) > 3.5
 
     def test_low_entropy_repeated(self):
-        assert shannon_entropy("aaaaaaaaaaaaaaaa") < 1.0
+        assert shannon_entropy("aaaaaaaaaaaaaaaa", B64_CHARS) < 1.0
 
     def test_empty_string(self):
-        assert shannon_entropy("") == 0.0
+        assert shannon_entropy("", B64_CHARS) == 0.0
 
     def test_aws_key_detected(self):
-        line = 'AWS_SECRET_ACCESS_KEY = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"'
+        # 40-char value without false-positive trigger words
+        line = 'AWS_SECRET_ACCESS_KEY = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYSECRETKEY1"'
         hits = scan_line_for_secrets(line, 1, "test.py")
         assert any(h["secret_type"] == "aws_secret_key" for h in hits), \
             f"Expected aws_secret_key in {[h['secret_type'] for h in hits]}"
 
     def test_github_token_detected(self):
-        line = 'token = "ghp_abcdefghijklmnopqrstuvwxyz123456"'
+        # ghp_ + exactly 36 alphanum chars to match the pattern
+        line = 'token = "ghp_abcdefghijklmnopqrstuvwxyz1234567890"'
         hits = scan_line_for_secrets(line, 1, "config.py")
         types = [h["secret_type"] for h in hits]
         assert any("github" in t for t in types), f"Expected github token in {types}"
@@ -54,7 +57,6 @@ class TestEntropy:
     def test_no_false_positive_on_placeholder(self):
         line = 'api_key = "your-api-key-here"'
         hits = scan_line_for_secrets(line, 1, "readme.md")
-        # Should not flag obvious placeholder text
         assert all(h.get("severity") not in ("critical", "high") for h in hits)
 
     def test_private_key_header_detected(self):
@@ -64,11 +66,12 @@ class TestEntropy:
 
     def test_secret_patterns_compile(self):
         import re
-        for p in SECRET_PATTERNS:
+        # SECRET_PATTERNS is a list of (regex, name, severity) tuples
+        for pattern, name, severity in SECRET_PATTERNS:
             try:
-                re.compile(p["regex"])
+                re.compile(pattern)
             except re.error as e:
-                pytest.fail(f"Pattern {p['name']} has invalid regex: {e}")
+                pytest.fail(f"Pattern {name!r} has invalid regex: {e}")
 
 
 # ── Language detection ────────────────────────────────────────────────────────

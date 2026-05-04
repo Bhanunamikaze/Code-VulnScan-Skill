@@ -142,7 +142,7 @@ def scan_line_for_secrets(line: str, line_num: int, file_path: str) -> list:
     stripped = line.strip()
 
     # Skip comments in most languages
-    if stripped.startswith(("#", "//", "*", "<!--", "--")):
+    if stripped.startswith(("#", "//", "*", "<!--")) or stripped.startswith("-- "):
         return []
 
     # Check named patterns first
