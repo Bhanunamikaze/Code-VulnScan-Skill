@@ -1,5 +1,8 @@
 # Core scripts use stdlib only (ast, json, re, sqlite3, pathlib, hashlib, math)
-# No required dependencies.
+# No required runtime dependencies.
+
+# Test dependencies
+pytest>=7.0
 
 # Optional: improves secret scanning accuracy
 # pip install pyyaml         # parse YAML manifests more accurately
