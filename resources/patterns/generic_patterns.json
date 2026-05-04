@@ -1,0 +1,29 @@
+{
+  "secrets": [
+    {"id": "gen-sec-001", "regex": "(?i)(?:password|passwd|pwd)\\s*=\\s*['\"][^'\"\\s]{4,}['\"]", "vuln_type": "hardcoded_secret", "confidence": "possible", "description": "Potential hardcoded password"},
+    {"id": "gen-sec-002", "regex": "(?i)(?:api_key|apikey|api-key)\\s*=\\s*['\"][^'\"\\s]{8,}['\"]", "vuln_type": "hardcoded_secret", "confidence": "possible", "description": "Potential hardcoded API key"},
+    {"id": "gen-sec-003", "regex": "(?i)(?:secret|token|auth)\\s*=\\s*['\"][^'\"\\s]{8,}['\"]", "vuln_type": "hardcoded_secret", "confidence": "possible", "description": "Potential hardcoded secret/token"},
+    {"id": "gen-sec-004", "regex": "AKIA[0-9A-Z]{16}", "vuln_type": "hardcoded_secret", "confidence": "confirmed", "description": "AWS Access Key ID hardcoded"},
+    {"id": "gen-sec-005", "regex": "-----BEGIN (?:RSA |EC |OPENSSH |DSA |PGP )?PRIVATE KEY-----", "vuln_type": "hardcoded_secret", "confidence": "confirmed", "description": "Private key material in source"},
+    {"id": "gen-sec-006", "regex": "ghp_[A-Za-z0-9]{36}", "vuln_type": "hardcoded_secret", "confidence": "confirmed", "description": "GitHub Personal Access Token hardcoded"},
+    {"id": "gen-sec-007", "regex": "sk-[A-Za-z0-9]{48}", "vuln_type": "hardcoded_secret", "confidence": "confirmed", "description": "OpenAI API key hardcoded"},
+    {"id": "gen-sec-008", "regex": "sk_live_[0-9a-zA-Z]{24}", "vuln_type": "hardcoded_secret", "confidence": "confirmed", "description": "Stripe live API key hardcoded — CRITICAL"}
+  ],
+  "debug": [
+    {"id": "gen-dbg-001", "regex": "(?i)debug\\s*=\\s*true|debug_mode\\s*=\\s*true", "vuln_type": "debug_mode", "confidence": "possible", "description": "Debug mode may be enabled — verify this is not production config"},
+    {"id": "gen-dbg-002", "regex": "(?i)app\\.run\\s*\\(.*debug\\s*=\\s*True", "vuln_type": "debug_mode", "confidence": "likely", "description": "Flask app running in debug mode"}
+  ],
+  "tls": [
+    {"id": "gen-tls-001", "regex": "(?i)ssl_verify\\s*=\\s*false|verify_ssl\\s*=\\s*false|verify\\s*=\\s*False", "vuln_type": "tls_bypass", "confidence": "likely", "description": "TLS/SSL certificate verification disabled"},
+    {"id": "gen-tls-002", "regex": "(?i)CURLOPT_SSL_VERIFYPEER\\s*,\\s*false|CURLOPT_SSL_VERIFYPEER\\s*,\\s*0", "vuln_type": "tls_bypass", "confidence": "confirmed", "description": "cURL SSL peer verification disabled"}
+  ],
+  "iac": [
+    {"id": "gen-iac-001", "regex": "privileged\\s*:\\s*true", "vuln_type": "iac_privilege", "confidence": "likely", "description": "Kubernetes privileged container"},
+    {"id": "gen-iac-002", "regex": "runAsUser\\s*:\\s*0", "vuln_type": "iac_privilege", "confidence": "likely", "description": "Container running as root (UID 0)"},
+    {"id": "gen-iac-003", "regex": "allowPrivilegeEscalation\\s*:\\s*true", "vuln_type": "iac_privilege", "confidence": "likely", "description": "Container allows privilege escalation"},
+    {"id": "gen-iac-004", "regex": "cidr_blocks\\s*=\\s*\\[\"0\\.0\\.0\\.0/0\"\\]", "vuln_type": "iac_network", "confidence": "possible", "description": "Terraform security group open to internet"},
+    {"id": "gen-iac-005", "regex": "block_public_acls\\s*=\\s*false", "vuln_type": "iac_storage", "confidence": "likely", "description": "S3 bucket public ACLs not blocked"},
+    {"id": "gen-iac-006", "regex": "storage_encrypted\\s*=\\s*false", "vuln_type": "iac_crypto", "confidence": "confirmed", "description": "RDS/EBS storage encryption disabled"},
+    {"id": "gen-iac-007", "regex": "/var/run/docker\\.sock", "vuln_type": "iac_privilege", "confidence": "confirmed", "description": "Docker socket mounted — container escape risk"}
+  ]
+}

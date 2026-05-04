@@ -1,0 +1,37 @@
+{
+  "sqli": [
+    {"id": "php-sqli-001", "regex": "mysql(?:i)?_query\\s*\\(.*\\$_(?:GET|POST|REQUEST|COOKIE)", "vuln_type": "sqli", "confidence": "likely", "description": "MySQL query with superglobal"},
+    {"id": "php-sqli-002", "regex": "->query\\s*\\(['\"].*\\.\\s*\\$", "vuln_type": "sqli", "confidence": "likely", "description": "PDO/mysqli query with string concatenation"},
+    {"id": "php-sqli-003", "regex": "->query\\s*\\(.*\\$_(?:GET|POST|REQUEST)", "vuln_type": "sqli", "confidence": "likely", "description": "PDO/mysqli query with superglobal"},
+    {"id": "php-sqli-004", "regex": "\"SELECT.*WHERE.*\"\\s*\\.\\s*\\$", "vuln_type": "sqli", "confidence": "likely", "description": "SQL string with concatenated variable"}
+  ],
+  "cmdi": [
+    {"id": "php-cmdi-001", "regex": "\\bsystem\\s*\\(.*\\$_(?:GET|POST|REQUEST)", "vuln_type": "cmdi", "confidence": "likely", "description": "system() with superglobal — command injection"},
+    {"id": "php-cmdi-002", "regex": "\\bexec\\s*\\(.*\\$_(?:GET|POST|REQUEST)", "vuln_type": "cmdi", "confidence": "likely", "description": "exec() with superglobal — command injection"},
+    {"id": "php-cmdi-003", "regex": "\\bshell_exec\\s*\\(", "vuln_type": "cmdi", "confidence": "possible", "description": "shell_exec() — verify argument is not user-controlled"},
+    {"id": "php-cmdi-004", "regex": "\\bpassthru\\s*\\(", "vuln_type": "cmdi", "confidence": "possible", "description": "passthru() — verify argument is not user-controlled"},
+    {"id": "php-cmdi-005", "regex": "`[^`]*\\$_(?:GET|POST|REQUEST)[^`]*`", "vuln_type": "cmdi", "confidence": "likely", "description": "Backtick execution with superglobal — command injection"},
+    {"id": "php-cmdi-006", "regex": "preg_replace\\s*\\(.*\\/e['\"]", "vuln_type": "cmdi", "confidence": "confirmed", "description": "preg_replace with /e modifier — code execution"}
+  ],
+  "path_traversal": [
+    {"id": "php-pt-001", "regex": "\\binclude\\s*\\(.*\\$_(?:GET|POST|REQUEST)", "vuln_type": "lfi", "confidence": "likely", "description": "PHP include() with superglobal — LFI/RFI"},
+    {"id": "php-pt-002", "regex": "\\brequire\\s*\\(.*\\$_(?:GET|POST|REQUEST)", "vuln_type": "lfi", "confidence": "likely", "description": "PHP require() with superglobal — LFI/RFI"},
+    {"id": "php-pt-003", "regex": "file_get_contents\\s*\\(.*\\$_(?:GET|POST|REQUEST)", "vuln_type": "path_traversal", "confidence": "likely", "description": "file_get_contents() with superglobal"},
+    {"id": "php-pt-004", "regex": "\\bfopen\\s*\\(.*\\$_(?:GET|POST|REQUEST)", "vuln_type": "path_traversal", "confidence": "likely", "description": "fopen() with superglobal"}
+  ],
+  "xss": [
+    {"id": "php-xss-001", "regex": "\\becho\\s+\\$_(?:GET|POST|REQUEST|COOKIE)", "vuln_type": "xss", "confidence": "confirmed", "description": "Direct echo of superglobal — reflected XSS"},
+    {"id": "php-xss-002", "regex": "\\bprint\\s+\\$_(?:GET|POST|REQUEST|COOKIE)", "vuln_type": "xss", "confidence": "confirmed", "description": "Direct print of superglobal — reflected XSS"},
+    {"id": "php-xss-003", "regex": "echo\\s+\\$(?!_)\\w+;", "vuln_type": "xss", "confidence": "possible", "description": "echo of variable — verify it is sanitized before output"}
+  ],
+  "deserialization": [
+    {"id": "php-deser-001", "regex": "\\bunserialize\\s*\\(\\s*\\$_(?:GET|POST|REQUEST|COOKIE)", "vuln_type": "deserialization", "confidence": "confirmed", "description": "unserialize() with superglobal — PHP object injection"},
+    {"id": "php-deser-002", "regex": "\\bunserialize\\s*\\(", "vuln_type": "deserialization", "confidence": "possible", "description": "unserialize() — verify input is from trusted source"}
+  ],
+  "crypto": [
+    {"id": "php-crypto-001", "regex": "\\bmd5\\s*\\(", "vuln_type": "weak_crypto", "confidence": "possible", "description": "md5() — insecure for security-sensitive use (passwords, integrity checks)"},
+    {"id": "php-crypto-002", "regex": "\\bsha1\\s*\\(", "vuln_type": "weak_crypto", "confidence": "possible", "description": "sha1() — insecure for security-sensitive use"},
+    {"id": "php-crypto-003", "regex": "\\brand\\s*\\(|\\bmt_rand\\s*\\(", "vuln_type": "insecure_random", "confidence": "possible", "description": "rand()/mt_rand() — not CSPRNG, use random_bytes()/random_int()"},
+    {"id": "php-crypto-004", "regex": "password_hash\\s*\\(.*PASSWORD_MD5|PASSWORD_SHA1", "vuln_type": "weak_crypto", "confidence": "confirmed", "description": "Insecure password hashing algorithm"}
+  ]
+}

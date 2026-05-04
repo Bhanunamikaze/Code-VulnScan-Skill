@@ -1,0 +1,42 @@
+{
+  "xss": [
+    {"id": "js-xss-001", "regex": "\\.innerHTML\\s*=\\s*(?!\"'`)", "vuln_type": "xss", "confidence": "possible", "description": "innerHTML assignment — verify RHS is not user-controlled"},
+    {"id": "js-xss-002", "regex": "\\.innerHTML\\s*=.*(?:req\\.|request\\.|params\\.|query\\.|body\\.)", "vuln_type": "xss", "confidence": "likely", "description": "innerHTML assigned from request data"},
+    {"id": "js-xss-003", "regex": "document\\.write\\s*\\(", "vuln_type": "xss", "confidence": "possible", "description": "document.write() — verify argument is not user-controlled"},
+    {"id": "js-xss-004", "regex": "insertAdjacentHTML\\s*\\(", "vuln_type": "xss", "confidence": "possible", "description": "insertAdjacentHTML() — verify content is sanitized"},
+    {"id": "js-xss-005", "regex": "dangerouslySetInnerHTML\\s*=\\s*\\{\\s*\\{\\s*__html", "vuln_type": "xss", "confidence": "possible", "description": "React dangerouslySetInnerHTML — verify source is safe"}
+  ],
+  "sqli": [
+    {"id": "js-sqli-001", "regex": "\\.query\\s*\\(`[^`]*\\$\\{", "vuln_type": "sqli", "confidence": "likely", "description": "DB query with template literal interpolation"},
+    {"id": "js-sqli-002", "regex": "\\.query\\s*\\(['\"][^'\"]*['\"]\\s*\\+", "vuln_type": "sqli", "confidence": "likely", "description": "DB query with string concatenation"},
+    {"id": "js-sqli-003", "regex": "knex\\.raw\\s*\\(`[^`]*\\$\\{", "vuln_type": "sqli", "confidence": "likely", "description": "Knex raw() with template literal interpolation"},
+    {"id": "js-sqli-004", "regex": "sequelize\\.query\\s*\\(`[^`]*\\$\\{", "vuln_type": "sqli", "confidence": "likely", "description": "Sequelize query() with template literal interpolation"}
+  ],
+  "cmdi": [
+    {"id": "js-cmdi-001", "regex": "exec\\s*\\(`[^`]*\\$\\{", "vuln_type": "cmdi", "confidence": "likely", "description": "child_process.exec() with template literal — shell injection risk"},
+    {"id": "js-cmdi-002", "regex": "execSync\\s*\\(`[^`]*\\$\\{", "vuln_type": "cmdi", "confidence": "likely", "description": "execSync() with template literal — shell injection risk"},
+    {"id": "js-cmdi-003", "regex": "\\beval\\s*\\(", "vuln_type": "eval_injection", "confidence": "possible", "description": "eval() — verify argument is not user-controlled"},
+    {"id": "js-cmdi-004", "regex": "new\\s+Function\\s*\\(", "vuln_type": "eval_injection", "confidence": "possible", "description": "new Function() — code injection risk"}
+  ],
+  "path_traversal": [
+    {"id": "js-pt-001", "regex": "fs\\.readFile(?:Sync)?\\s*\\([^,)]*(?:req\\.|params\\.|query\\.)", "vuln_type": "path_traversal", "confidence": "likely", "description": "fs.readFile() with request path"},
+    {"id": "js-pt-002", "regex": "path\\.join\\s*\\([^)]*(?:req\\.|params\\.|query\\.)", "vuln_type": "path_traversal", "confidence": "likely", "description": "path.join() with request data — verify canonicalization"}
+  ],
+  "ssrf": [
+    {"id": "js-ssrf-001", "regex": "\\bfetch\\s*\\([^)]*(?:req\\.|params\\.|query\\.|body\\.)", "vuln_type": "ssrf", "confidence": "likely", "description": "fetch() with URL from request data"},
+    {"id": "js-ssrf-002", "regex": "axios\\.(get|post)\\s*\\([^)]*(?:req\\.|params\\.|query\\.)", "vuln_type": "ssrf", "confidence": "likely", "description": "axios HTTP call with URL from request data"}
+  ],
+  "prototype_pollution": [
+    {"id": "js-pp-001", "regex": "\\[\\s*['\"]__proto__['\"]\\s*\\]\\s*=", "vuln_type": "prototype_pollution", "confidence": "confirmed", "description": "Direct __proto__ assignment — prototype pollution"},
+    {"id": "js-pp-002", "regex": "Object\\.assign\\s*\\(\\s*\\{\\}", "vuln_type": "prototype_pollution", "confidence": "possible", "description": "Object.assign with empty target — verify source is not user-controlled"},
+    {"id": "js-pp-003", "regex": "\\bmerge\\s*\\(.*req\\.", "vuln_type": "prototype_pollution", "confidence": "likely", "description": "Deep merge with request data — verify merge is safe"}
+  ],
+  "crypto": [
+    {"id": "js-crypto-001", "regex": "Math\\.random\\s*\\(\\s*\\)", "vuln_type": "insecure_random", "confidence": "possible", "description": "Math.random() — not CSPRNG, insecure for tokens/OTPs"},
+    {"id": "js-crypto-002", "regex": "createHash\\s*\\(['\"]md5['\"]\\)", "vuln_type": "weak_crypto", "confidence": "possible", "description": "MD5 hash — insecure for security-sensitive use"},
+    {"id": "js-crypto-003", "regex": "createHash\\s*\\(['\"]sha1['\"]\\)", "vuln_type": "weak_crypto", "confidence": "possible", "description": "SHA1 hash — insecure for security-sensitive use"}
+  ],
+  "open_redirect": [
+    {"id": "js-or-001", "regex": "res\\.redirect\\s*\\([^)]*(?:req\\.|params\\.|query\\.)", "vuln_type": "open_redirect", "confidence": "likely", "description": "Express redirect with URL from request — verify URL is whitelisted"}
+  ]
+}

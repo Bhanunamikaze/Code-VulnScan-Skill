@@ -1,0 +1,51 @@
+{
+  "sqli": [
+    {"id": "py-sqli-001", "regex": "execute\\s*\\(\\s*f['\"]", "vuln_type": "sqli", "confidence": "likely", "description": "SQL execution with f-string interpolation"},
+    {"id": "py-sqli-002", "regex": "execute\\s*\\(\\s*['\"][^'\"]*['\"]\\s*\\+\\s*\\w", "vuln_type": "sqli", "confidence": "likely", "description": "SQL execution with string concatenation"},
+    {"id": "py-sqli-003", "regex": "execute\\s*\\(\\s*['\"][^'\"]*%[sd]", "vuln_type": "sqli", "confidence": "likely", "description": "SQL execution with %-formatting"},
+    {"id": "py-sqli-004", "regex": "\\.raw\\s*\\(\\s*f['\"]", "vuln_type": "sqli", "confidence": "likely", "description": "Django ORM raw() with f-string"},
+    {"id": "py-sqli-005", "regex": "RawSQL\\s*\\(\\s*f['\"]", "vuln_type": "sqli", "confidence": "likely", "description": "Django RawSQL() with f-string"},
+    {"id": "py-sqli-006", "regex": "text\\s*\\(\\s*f['\"]", "vuln_type": "sqli", "confidence": "likely", "description": "SQLAlchemy text() with f-string"},
+    {"id": "py-sqli-007", "regex": "\\.extra\\s*\\(\\s*where\\s*=\\s*\\[\\s*f['\"]", "vuln_type": "sqli", "confidence": "likely", "description": "Django ORM extra() with f-string"}
+  ],
+  "cmdi": [
+    {"id": "py-cmdi-001", "regex": "os\\.system\\s*\\(", "vuln_type": "cmdi", "confidence": "possible", "description": "os.system() call — verify argument is not user-controlled"},
+    {"id": "py-cmdi-002", "regex": "subprocess\\.(run|call|Popen|check_output|check_call)\\s*\\([^)]*shell\\s*=\\s*True", "vuln_type": "cmdi", "confidence": "likely", "description": "subprocess with shell=True — shell injection risk"},
+    {"id": "py-cmdi-003", "regex": "os\\.popen\\s*\\(", "vuln_type": "cmdi", "confidence": "possible", "description": "os.popen() — verify argument is not user-controlled"},
+    {"id": "py-cmdi-004", "regex": "\\beval\\s*\\(", "vuln_type": "cmdi", "confidence": "possible", "description": "eval() — verify argument is not user-controlled"},
+    {"id": "py-cmdi-005", "regex": "\\bexec\\s*\\(", "vuln_type": "cmdi", "confidence": "possible", "description": "exec() — verify argument is not user-controlled"}
+  ],
+  "path_traversal": [
+    {"id": "py-pt-001", "regex": "open\\s*\\([^)]*request\\.", "vuln_type": "path_traversal", "confidence": "likely", "description": "File open() with request data"},
+    {"id": "py-pt-002", "regex": "os\\.path\\.join\\s*\\([^)]*request\\.", "vuln_type": "path_traversal", "confidence": "likely", "description": "os.path.join() with request data"},
+    {"id": "py-pt-003", "regex": "send_file\\s*\\(", "vuln_type": "path_traversal", "confidence": "possible", "description": "Flask send_file() — verify path is restricted"},
+    {"id": "py-pt-004", "regex": "send_from_directory\\s*\\([^,]+,\\s*\\w+", "vuln_type": "path_traversal", "confidence": "possible", "description": "Flask send_from_directory() — verify filename is safe"}
+  ],
+  "xss": [
+    {"id": "py-xss-001", "regex": "render_template_string\\s*\\(\\s*f['\"]", "vuln_type": "ssti", "confidence": "likely", "description": "Jinja2 render_template_string() with f-string — SSTI risk"},
+    {"id": "py-xss-002", "regex": "Markup\\s*\\(\\s*\\w+", "vuln_type": "xss", "confidence": "possible", "description": "Jinja2 Markup() wrapping a variable — verify variable is safe"},
+    {"id": "py-xss-003", "regex": "jinja2\\.Template\\s*\\(\\s*\\w+", "vuln_type": "ssti", "confidence": "likely", "description": "Jinja2 Template() with a variable — SSTI if user-controlled"}
+  ],
+  "ssrf": [
+    {"id": "py-ssrf-001", "regex": "requests\\.(get|post|put|delete|patch)\\s*\\([^)]*request\\.", "vuln_type": "ssrf", "confidence": "likely", "description": "HTTP request with URL from incoming request data"},
+    {"id": "py-ssrf-002", "regex": "urllib\\.request\\.urlopen\\s*\\(", "vuln_type": "ssrf", "confidence": "possible", "description": "urllib.urlopen() — verify URL is not user-controlled"},
+    {"id": "py-ssrf-003", "regex": "httpx\\.(get|post|put|delete|patch)\\s*\\([^)]*request\\.", "vuln_type": "ssrf", "confidence": "likely", "description": "httpx HTTP call with URL from request"}
+  ],
+  "deserialization": [
+    {"id": "py-deser-001", "regex": "pickle\\.loads?\\s*\\(", "vuln_type": "deserialization", "confidence": "possible", "description": "pickle.load/loads() — verify data is from trusted source"},
+    {"id": "py-deser-002", "regex": "yaml\\.load\\s*\\([^,)]+\\)", "vuln_type": "deserialization", "confidence": "likely", "description": "yaml.load() without Loader=yaml.SafeLoader — arbitrary code execution risk"},
+    {"id": "py-deser-003", "regex": "marshal\\.loads?\\s*\\(", "vuln_type": "deserialization", "confidence": "possible", "description": "marshal.load/loads() — unsafe deserialization"}
+  ],
+  "crypto": [
+    {"id": "py-crypto-001", "regex": "hashlib\\.md5\\s*\\(", "vuln_type": "weak_crypto", "confidence": "possible", "description": "MD5 hash — insecure for security-sensitive use"},
+    {"id": "py-crypto-002", "regex": "hashlib\\.sha1\\s*\\(", "vuln_type": "weak_crypto", "confidence": "possible", "description": "SHA1 hash — insecure for security-sensitive use"},
+    {"id": "py-crypto-003", "regex": "random\\.(?:random|randint|choice|randrange)\\s*\\(", "vuln_type": "insecure_random", "confidence": "possible", "description": "Non-CSPRNG random — insecure for security tokens/OTPs"},
+    {"id": "py-crypto-004", "regex": "AES\\.MODE_ECB", "vuln_type": "weak_crypto", "confidence": "confirmed", "description": "AES ECB mode — deterministic, leaks patterns"},
+    {"id": "py-crypto-005", "regex": "verify\\s*=\\s*False", "vuln_type": "tls_bypass", "confidence": "likely", "description": "TLS certificate verification disabled in requests"}
+  ],
+  "auth": [
+    {"id": "py-auth-001", "regex": "jwt\\.decode\\s*\\([^)]*options\\s*=\\s*\\{[^}]*verify_signature.*False", "vuln_type": "auth_bypass", "confidence": "confirmed", "description": "JWT signature verification disabled"},
+    {"id": "py-auth-002", "regex": "jwt\\.decode\\s*\\([^)]*algorithms\\s*=\\s*\\[['\"]none['\"]", "vuln_type": "auth_bypass", "confidence": "confirmed", "description": "JWT accepts 'none' algorithm"},
+    {"id": "py-auth-003", "regex": "password\\s*==\\s*", "vuln_type": "timing_attack", "confidence": "possible", "description": "Password comparison with == — potential timing attack. Use hmac.compare_digest()"}
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "sqli": [
+    {"id": "go-sqli-001", "regex": "db\\.Query\\s*\\(.*\\+", "vuln_type": "sqli", "confidence": "likely", "description": "db.Query() with string concatenation"},
+    {"id": "go-sqli-002", "regex": "db\\.Exec\\s*\\(.*\\+", "vuln_type": "sqli", "confidence": "likely", "description": "db.Exec() with string concatenation"},
+    {"id": "go-sqli-003", "regex": "fmt\\.Sprintf\\s*\\(.*(?:SELECT|INSERT|UPDATE|DELETE)", "vuln_type": "sqli", "confidence": "likely", "description": "SQL query built with fmt.Sprintf — use parameterized queries"},
+    {"id": "go-sqli-004", "regex": "db\\.QueryRow\\s*\\(.*\\+", "vuln_type": "sqli", "confidence": "likely", "description": "db.QueryRow() with string concatenation"}
+  ],
+  "cmdi": [
+    {"id": "go-cmdi-001", "regex": "exec\\.Command\\s*\\([^)]*r\\.(?:URL|Form|PostForm|Header)", "vuln_type": "cmdi", "confidence": "likely", "description": "exec.Command() with request data"},
+    {"id": "go-cmdi-002", "regex": "exec\\.Command\\s*\\(\\s*['\"]sh['\"]\\s*,\\s*['\"]\\-c['\"]", "vuln_type": "cmdi", "confidence": "possible", "description": "exec.Command('sh', '-c', ...) — shell injection if arg is user-controlled"}
+  ],
+  "path_traversal": [
+    {"id": "go-pt-001", "regex": "os\\.Open\\s*\\([^)]*r\\.(?:URL|Form|FormValue)", "vuln_type": "path_traversal", "confidence": "likely", "description": "os.Open() with request data"},
+    {"id": "go-pt-002", "regex": "filepath\\.Join\\s*\\([^)]*r\\.(?:URL|FormValue)", "vuln_type": "path_traversal", "confidence": "likely", "description": "filepath.Join() with request data — verify path is restricted"}
+  ],
+  "ssrf": [
+    {"id": "go-ssrf-001", "regex": "http\\.Get\\s*\\([^)]*r\\.(?:URL|FormValue|Form)", "vuln_type": "ssrf", "confidence": "likely", "description": "http.Get() with URL from request"},
+    {"id": "go-ssrf-002", "regex": "http\\.Post\\s*\\([^)]*r\\.(?:URL|FormValue|Form)", "vuln_type": "ssrf", "confidence": "likely", "description": "http.Post() with URL from request"}
+  ],
+  "crypto": [
+    {"id": "go-crypto-001", "regex": "md5\\.New\\s*\\(\\s*\\)|md5\\.Sum\\s*\\(", "vuln_type": "weak_crypto", "confidence": "possible", "description": "MD5 hash — insecure for security-sensitive use"},
+    {"id": "go-crypto-002", "regex": "sha1\\.New\\s*\\(\\s*\\)|sha1\\.Sum\\s*\\(", "vuln_type": "weak_crypto", "confidence": "possible", "description": "SHA1 hash — insecure for security-sensitive use"},
+    {"id": "go-crypto-003", "regex": "rand\\.Intn\\s*\\(|rand\\.Int\\s*\\(\\s*\\)|rand\\.Float", "vuln_type": "insecure_random", "confidence": "possible", "description": "math/rand — not CSPRNG, use crypto/rand for security tokens"},
+    {"id": "go-crypto-004", "regex": "tls\\.Config\\s*\\{[^}]*InsecureSkipVerify\\s*:\\s*true", "vuln_type": "tls_bypass", "confidence": "confirmed", "description": "TLS InsecureSkipVerify: true — certificate validation disabled"}
+  ],
+  "xss": [
+    {"id": "go-xss-001", "regex": "fmt\\.Fprintf\\s*\\(\\s*w\\s*,.*r\\.(?:URL|FormValue|Form)", "vuln_type": "xss", "confidence": "likely", "description": "fmt.Fprintf to ResponseWriter with request data — potential XSS"},
+    {"id": "go-xss-002", "regex": "template\\.HTML\\s*\\(", "vuln_type": "xss", "confidence": "possible", "description": "template.HTML() marks string as safe — verify it actually is"}
+  ]
+}

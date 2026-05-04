@@ -1,0 +1,10 @@
+workspace/*.db
+workspace/*.md
+workspace/*.json
+workspace/*.sarif
+workspace/*.jsonl
+!workspace/.gitkeep
+__pycache__/
+*.pyc
+*.pyo
+.python-version

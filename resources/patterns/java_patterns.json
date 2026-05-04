@@ -1,0 +1,34 @@
+{
+  "sqli": [
+    {"id": "java-sqli-001", "regex": "createNativeQuery\\s*\\(.*\\+", "vuln_type": "sqli", "confidence": "likely", "description": "JPA createNativeQuery() with string concatenation"},
+    {"id": "java-sqli-002", "regex": "createQuery\\s*\\(.*\\+", "vuln_type": "sqli", "confidence": "possible", "description": "JPA createQuery() with string concatenation — verify no user input"},
+    {"id": "java-sqli-003", "regex": "Statement\\.execute(?:Query|Update)?\\s*\\(.*\\+", "vuln_type": "sqli", "confidence": "likely", "description": "JDBC Statement.execute() with concatenation"},
+    {"id": "java-sqli-004", "regex": "executeQuery\\s*\\(\\s*\".*\\+", "vuln_type": "sqli", "confidence": "likely", "description": "executeQuery() with string concatenation"},
+    {"id": "java-sqli-005", "regex": "createSQLQuery\\s*\\(.*\\+", "vuln_type": "sqli", "confidence": "likely", "description": "Hibernate createSQLQuery() with concatenation"}
+  ],
+  "cmdi": [
+    {"id": "java-cmdi-001", "regex": "Runtime\\.getRuntime\\(\\)\\.exec\\s*\\(", "vuln_type": "cmdi", "confidence": "possible", "description": "Runtime.exec() — verify argument is not user-controlled"},
+    {"id": "java-cmdi-002", "regex": "ProcessBuilder\\s*\\(.*\\+", "vuln_type": "cmdi", "confidence": "likely", "description": "ProcessBuilder with string concatenation — command injection risk"}
+  ],
+  "xxe": [
+    {"id": "java-xxe-001", "regex": "DocumentBuilderFactory\\.newInstance\\s*\\(\\s*\\)", "vuln_type": "xxe", "confidence": "possible", "description": "DocumentBuilderFactory — verify external entity processing is disabled"},
+    {"id": "java-xxe-002", "regex": "SAXParserFactory\\.newInstance\\s*\\(\\s*\\)", "vuln_type": "xxe", "confidence": "possible", "description": "SAXParserFactory — verify external entity processing is disabled"},
+    {"id": "java-xxe-003", "regex": "XMLInputFactory\\.newInstance\\s*\\(\\s*\\)", "vuln_type": "xxe", "confidence": "possible", "description": "XMLInputFactory — verify IS_SUPPORTING_EXTERNAL_ENTITIES is false"}
+  ],
+  "deserialization": [
+    {"id": "java-deser-001", "regex": "ObjectInputStream\\s*\\(", "vuln_type": "deserialization", "confidence": "possible", "description": "ObjectInputStream — verify input is from trusted source"},
+    {"id": "java-deser-002", "regex": "readObject\\s*\\(\\s*\\)", "vuln_type": "deserialization", "confidence": "possible", "description": "readObject() — verify deserialization is safe"},
+    {"id": "java-deser-003", "regex": "XStream\\.fromXML\\s*\\(", "vuln_type": "deserialization", "confidence": "likely", "description": "XStream.fromXML() with untrusted data — RCE risk"}
+  ],
+  "path_traversal": [
+    {"id": "java-pt-001", "regex": "new\\s+FileInputStream\\s*\\(.*getParameter", "vuln_type": "path_traversal", "confidence": "likely", "description": "FileInputStream with request parameter"},
+    {"id": "java-pt-002", "regex": "Files\\.readAllBytes\\s*\\(\\s*Paths\\.get\\s*\\(.*getParameter", "vuln_type": "path_traversal", "confidence": "likely", "description": "Files.readAllBytes with request parameter path"}
+  ],
+  "crypto": [
+    {"id": "java-crypto-001", "regex": "MessageDigest\\.getInstance\\s*\\(['\"]MD5['\"]\\)", "vuln_type": "weak_crypto", "confidence": "possible", "description": "MD5 MessageDigest — insecure for security use"},
+    {"id": "java-crypto-002", "regex": "MessageDigest\\.getInstance\\s*\\(['\"]SHA-1['\"]\\)", "vuln_type": "weak_crypto", "confidence": "possible", "description": "SHA-1 MessageDigest — insecure for security use"},
+    {"id": "java-crypto-003", "regex": "Cipher\\.getInstance\\s*\\(['\"]AES/ECB", "vuln_type": "weak_crypto", "confidence": "confirmed", "description": "AES/ECB mode — deterministic, leaks patterns"},
+    {"id": "java-crypto-004", "regex": "new\\s+Random\\s*\\(\\s*\\)", "vuln_type": "insecure_random", "confidence": "possible", "description": "java.util.Random — not CSPRNG, use SecureRandom"},
+    {"id": "java-crypto-005", "regex": "setHostnameVerifier\\s*\\(.*ALLOW_ALL|NoopHostnameVerifier", "vuln_type": "tls_bypass", "confidence": "confirmed", "description": "Hostname verification disabled — TLS MITM risk"}
+  ]
+}
