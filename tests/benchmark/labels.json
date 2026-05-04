@@ -1,0 +1,86 @@
+{
+  "vulnerable/python/sqli_001.py": [
+    {"line": 13, "cwe": 89, "type": "sqli"}
+  ],
+  "vulnerable/python/sqli_002.py": [
+    {"line": 9, "cwe": 89, "type": "sqli"}
+  ],
+  "vulnerable/python/cmdi_001.py": [
+    {"line": 11, "cwe": 78, "type": "cmdi"}
+  ],
+  "vulnerable/python/cmdi_002.py": [
+    {"line": 11, "cwe": 78, "type": "cmdi"}
+  ],
+  "vulnerable/python/path_traversal_001.py": [
+    {"line": 10, "cwe": 22, "type": "path_traversal"}
+  ],
+  "vulnerable/python/ssti_001.py": [
+    {"line": 11, "cwe": 94, "type": "ssti"}
+  ],
+  "vulnerable/python/xss_001.py": [
+    {"line": 11, "cwe": 79, "type": "xss"}
+  ],
+  "vulnerable/python/deserialization_001.py": [
+    {"line": 11, "cwe": 502, "type": "deserialization"}
+  ],
+  "vulnerable/python/ssrf_001.py": [
+    {"line": 11, "cwe": 918, "type": "ssrf"}
+  ],
+  "vulnerable/python/interprocedural_sqli.py": [
+    {"line": 11, "cwe": 89, "type": "sqli"}
+  ],
+  "vulnerable/javascript/xss_001.js": [
+    {"line": 9, "cwe": 79, "type": "xss"}
+  ],
+  "vulnerable/javascript/sqli_001.js": [
+    {"line": 11, "cwe": 89, "type": "sqli"}
+  ],
+  "vulnerable/javascript/cmdi_001.js": [
+    {"line": 8, "cwe": 78, "type": "cmdi"}
+  ],
+  "vulnerable/javascript/path_traversal_001.js": [
+    {"line": 8, "cwe": 22, "type": "path_traversal"}
+  ],
+  "vulnerable/javascript/open_redirect_001.js": [
+    {"line": 8, "cwe": 601, "type": "open_redirect"}
+  ],
+  "vulnerable/javascript/proto_pollution_001.js": [
+    {"line": 10, "cwe": 1321, "type": "proto_pollution"}
+  ],
+  "vulnerable/java/sqli_001.java": [
+    {"line": 11, "cwe": 89, "type": "sqli"}
+  ],
+  "vulnerable/java/cmdi_001.java": [
+    {"line": 10, "cwe": 78, "type": "cmdi"}
+  ],
+  "vulnerable/java/path_traversal_001.java": [
+    {"line": 12, "cwe": 22, "type": "path_traversal"}
+  ],
+  "vulnerable/java/xxe_001.java": [
+    {"line": 12, "cwe": 611, "type": "xxe"}
+  ],
+  "vulnerable/go/sqli_001.go": [
+    {"line": 16, "cwe": 89, "type": "sqli"}
+  ],
+  "vulnerable/go/cmdi_001.go": [
+    {"line": 12, "cwe": 78, "type": "cmdi"}
+  ],
+  "vulnerable/go/ssrf_001.go": [
+    {"line": 12, "cwe": 918, "type": "ssrf"}
+  ],
+  "vulnerable/go/path_traversal_001.go": [
+    {"line": 12, "cwe": 22, "type": "path_traversal"}
+  ],
+  "vulnerable/php/sqli_001.php": [
+    {"line": 7, "cwe": 89, "type": "sqli"}
+  ],
+  "vulnerable/php/cmdi_001.php": [
+    {"line": 4, "cwe": 78, "type": "cmdi"}
+  ],
+  "vulnerable/php/xss_001.php": [
+    {"line": 4, "cwe": 79, "type": "xss"}
+  ],
+  "vulnerable/php/path_traversal_001.php": [
+    {"line": 4, "cwe": 22, "type": "path_traversal"}
+  ]
+}

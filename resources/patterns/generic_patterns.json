@@ -25,5 +25,10 @@
     {"id": "gen-iac-005", "regex": "block_public_acls\\s*=\\s*false", "vuln_type": "iac_storage", "confidence": "likely", "description": "S3 bucket public ACLs not blocked"},
     {"id": "gen-iac-006", "regex": "storage_encrypted\\s*=\\s*false", "vuln_type": "iac_crypto", "confidence": "confirmed", "description": "RDS/EBS storage encryption disabled"},
     {"id": "gen-iac-007", "regex": "/var/run/docker\\.sock", "vuln_type": "iac_privilege", "confidence": "confirmed", "description": "Docker socket mounted — container escape risk"}
+  ],
+  "ssti": [
+    {"id": "GEN-SSTI-001", "regex": "Template\\s*\\(\\s*user", "description": "Template initialized with user data (SSTI)", "severity": "critical", "cwe": 94},
+    {"id": "GEN-SSTI-002", "regex": "render\\s*\\(\\s*(?:request|user|input)", "description": "Render called with user-controlled data", "severity": "high", "cwe": 94},
+    {"id": "GEN-SSTI-003", "regex": "from_string\\s*\\(\\s*(?:request|user|payload)", "description": "Template from_string with user data", "severity": "critical", "cwe": 94}
   ]
 }

@@ -33,5 +33,13 @@
     {"id": "php-crypto-002", "regex": "\\bsha1\\s*\\(", "vuln_type": "weak_crypto", "confidence": "possible", "description": "sha1() — insecure for security-sensitive use"},
     {"id": "php-crypto-003", "regex": "\\brand\\s*\\(|\\bmt_rand\\s*\\(", "vuln_type": "insecure_random", "confidence": "possible", "description": "rand()/mt_rand() — not CSPRNG, use random_bytes()/random_int()"},
     {"id": "php-crypto-004", "regex": "password_hash\\s*\\(.*PASSWORD_MD5|PASSWORD_SHA1", "vuln_type": "weak_crypto", "confidence": "confirmed", "description": "Insecure password hashing algorithm"}
+  ],
+  "xxe": [
+    {"id": "PHP-XXE-001", "regex": "simplexml_load_string\\s*\\(", "description": "SimpleXML without disabling external entities", "severity": "high", "cwe": 611},
+    {"id": "PHP-XXE-002", "regex": "new\\s+DOMDocument\\s*\\(\\s*\\)", "description": "DOMDocument without entity restrictions", "severity": "high", "cwe": 611},
+    {"id": "PHP-XXE-003", "regex": "libxml_disable_entity_loader\\s*\\(\\s*false", "description": "External entity loading explicitly enabled", "severity": "critical", "cwe": 611}
+  ],
+  "open_redirect": [
+    {"id": "PHP-REDIR-001", "regex": "header\\s*\\(\\s*['\"]Location:\\s*['\"]\\s*\\.\\s*\\$_(?:GET|POST|REQUEST)", "description": "Open redirect via unvalidated request param", "severity": "medium", "cwe": 601}
   ]
 }

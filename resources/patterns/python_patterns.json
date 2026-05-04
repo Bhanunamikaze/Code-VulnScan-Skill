@@ -47,5 +47,32 @@
     {"id": "py-auth-001", "regex": "jwt\\.decode\\s*\\([^)]*options\\s*=\\s*\\{[^}]*verify_signature.*False", "vuln_type": "auth_bypass", "confidence": "confirmed", "description": "JWT signature verification disabled"},
     {"id": "py-auth-002", "regex": "jwt\\.decode\\s*\\([^)]*algorithms\\s*=\\s*\\[['\"]none['\"]", "vuln_type": "auth_bypass", "confidence": "confirmed", "description": "JWT accepts 'none' algorithm"},
     {"id": "py-auth-003", "regex": "password\\s*==\\s*", "vuln_type": "timing_attack", "confidence": "possible", "description": "Password comparison with == — potential timing attack. Use hmac.compare_digest()"}
+  ],
+  "ldap_injection": [
+    {"id": "PY-LDAP-001", "regex": "ldap\\.search(?:_s|_st|_ext)?\\s*\\(", "description": "LDAP search with potential injection", "severity": "high", "cwe": 90},
+    {"id": "PY-LDAP-002", "regex": "connection\\.search\\s*\\(", "description": "LDAP connection search", "severity": "high", "cwe": 90}
+  ],
+  "xxe": [
+    {"id": "PY-XXE-001", "regex": "etree\\.(?:parse|fromstring|XML)\\s*\\(", "description": "lxml/ElementTree parse without entity resolution disabled", "severity": "high", "cwe": 611},
+    {"id": "PY-XXE-002", "regex": "XMLParser\\s*\\([^)]*resolve_entities\\s*=\\s*True", "description": "XMLParser with resolve_entities=True", "severity": "critical", "cwe": 611},
+    {"id": "PY-XXE-003", "regex": "xml\\.sax\\.parseString\\s*\\(", "description": "SAX parser without disabling external entities", "severity": "medium", "cwe": 611}
+  ],
+  "open_redirect": [
+    {"id": "PY-REDIR-001", "regex": "redirect\\s*\\(\\s*request\\.(?:args|GET|POST|form)(?:\\.get)?\\s*[\\[(]", "description": "Open redirect via unvalidated request param", "severity": "medium", "cwe": 601},
+    {"id": "PY-REDIR-002", "regex": "HttpResponseRedirect\\s*\\(\\s*request\\.(?:GET|POST)", "description": "Django open redirect", "severity": "medium", "cwe": 601}
+  ],
+  "nosql_injection": [
+    {"id": "PY-NOSQL-001", "regex": "find\\s*\\(\\s*\\{[^}]*\\$where", "description": "MongoDB $where injection", "severity": "critical", "cwe": 943},
+    {"id": "PY-NOSQL-002", "regex": "\\.find\\s*\\(\\s*request\\.", "description": "MongoDB find with raw request data", "severity": "high", "cwe": 943}
+  ],
+  "race_toctou": [
+    {"id": "PY-RACE-001", "regex": "os\\.path\\.exists\\s*\\(.+\\)(?:[^\\n]*\\n){0,5}[^\\n]*open\\s*\\(", "description": "TOCTOU: exists() check followed by open()", "severity": "medium", "cwe": 367},
+    {"id": "PY-RACE-002", "regex": "if\\s+not\\s+os\\.path\\.exists\\s*\\(.+\\)(?:[^\\n]*\\n){0,5}[^\\n]*(?:open|create|makedirs)\\s*\\(", "description": "TOCTOU: not-exists check followed by create", "severity": "medium", "cwe": 367}
+  ],
+  "deserialization_gadgets": [
+    {"id": "PY-DESER-001", "regex": "pickle\\.loads?\\s*\\(", "description": "Unsafe pickle deserialization", "severity": "critical", "cwe": 502},
+    {"id": "PY-DESER-002", "regex": "marshal\\.loads?\\s*\\(", "description": "Unsafe marshal deserialization", "severity": "critical", "cwe": 502},
+    {"id": "PY-DESER-003", "regex": "yaml\\.load\\s*\\([^)]*Loader\\s*=\\s*yaml\\.(?:FullLoader|UnsafeLoader|Loader)\\b", "description": "yaml.load with unsafe Loader", "severity": "high", "cwe": 502},
+    {"id": "PY-DESER-004", "regex": "yaml\\.load\\s*\\([^)]*\\)", "description": "yaml.load without explicit Loader (defaults to unsafe)", "severity": "high", "cwe": 502}
   ]
 }

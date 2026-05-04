@@ -160,6 +160,16 @@ def cmd_scan(conn, args):
     if frameworks_seen:
         print("Frameworks: " + ", ".join(frameworks_seen.keys()))
 
+    # Extract routes/endpoints
+    routes = []
+    try:
+        from scripts.routes import extract_routes_from_project
+        routes = extract_routes_from_project(target, files, frameworks_seen)
+        if routes:
+            print(f"Routes found: {len(routes)}")
+    except (ImportError, Exception):
+        pass
+
     # Create or reuse run
     if resumed_run_id:
         run_id = resumed_run_id

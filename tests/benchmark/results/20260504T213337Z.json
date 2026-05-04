@@ -1,0 +1,816 @@
+{
+  "timestamp": "2026-05-04T21:33:37.630948Z",
+  "overall": {
+    "tp": 23,
+    "fp": 16,
+    "fn": 5,
+    "precision": 0.5897,
+    "recall": 0.8214,
+    "f1": 0.6866
+  },
+  "per_class": {
+    "cmdi": {
+      "tp": 4,
+      "fp": 1,
+      "fn": 2,
+      "precision": 0.8,
+      "recall": 0.6667,
+      "f1": 0.7273
+    },
+    "path_traversal": {
+      "tp": 4,
+      "fp": 4,
+      "fn": 1,
+      "precision": 0.5,
+      "recall": 0.8,
+      "f1": 0.6154
+    },
+    "sqli": {
+      "tp": 7,
+      "fp": 2,
+      "fn": 0,
+      "precision": 0.7778,
+      "recall": 1.0,
+      "f1": 0.875
+    },
+    "ssrf": {
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "xxe": {
+      "tp": 1,
+      "fp": 1,
+      "fn": 0,
+      "precision": 0.5,
+      "recall": 1.0,
+      "f1": 0.6667
+    },
+    "unknown": {
+      "tp": 0,
+      "fp": 3,
+      "fn": 0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    },
+    "open_redirect": {
+      "tp": 0,
+      "fp": 0,
+      "fn": 1,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    },
+    "proto_pollution": {
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "xss": {
+      "tp": 3,
+      "fp": 4,
+      "fn": 0,
+      "precision": 0.4286,
+      "recall": 1.0,
+      "f1": 0.6
+    },
+    "deserialization": {
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "ssti": {
+      "tp": 0,
+      "fp": 1,
+      "fn": 1,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    }
+  },
+  "file_results": [
+    {
+      "file": "vulnerable/go/cmdi_001.go",
+      "kind": "vulnerable",
+      "expected": [
+        "cmdi"
+      ],
+      "found": [
+        "cmdi"
+      ],
+      "findings_count": 2,
+      "tp": [
+        "cmdi"
+      ],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "vulnerable/go/path_traversal_001.go",
+      "kind": "vulnerable",
+      "expected": [
+        "path_traversal"
+      ],
+      "found": [
+        "path_traversal"
+      ],
+      "findings_count": 1,
+      "tp": [
+        "path_traversal"
+      ],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "vulnerable/go/sqli_001.go",
+      "kind": "vulnerable",
+      "expected": [
+        "sqli"
+      ],
+      "found": [
+        "sqli"
+      ],
+      "findings_count": 2,
+      "tp": [
+        "sqli"
+      ],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "vulnerable/go/ssrf_001.go",
+      "kind": "vulnerable",
+      "expected": [
+        "ssrf"
+      ],
+      "found": [
+        "ssrf"
+      ],
+      "findings_count": 1,
+      "tp": [
+        "ssrf"
+      ],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "vulnerable/java/cmdi_001.java",
+      "kind": "vulnerable",
+      "expected": [
+        "cmdi"
+      ],
+      "found": [],
+      "findings_count": 0,
+      "tp": [],
+      "fn": [
+        "cmdi"
+      ],
+      "fp_here": []
+    },
+    {
+      "file": "vulnerable/java/path_traversal_001.java",
+      "kind": "vulnerable",
+      "expected": [
+        "path_traversal"
+      ],
+      "found": [],
+      "findings_count": 0,
+      "tp": [],
+      "fn": [
+        "path_traversal"
+      ],
+      "fp_here": []
+    },
+    {
+      "file": "vulnerable/java/sqli_001.java",
+      "kind": "vulnerable",
+      "expected": [
+        "sqli"
+      ],
+      "found": [
+        "sqli"
+      ],
+      "findings_count": 1,
+      "tp": [
+        "sqli"
+      ],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "vulnerable/java/xxe_001.java",
+      "kind": "vulnerable",
+      "expected": [
+        "xxe"
+      ],
+      "found": [
+        "unknown",
+        "xxe"
+      ],
+      "findings_count": 2,
+      "tp": [
+        "xxe"
+      ],
+      "fn": [],
+      "fp_here": [
+        "unknown"
+      ]
+    },
+    {
+      "file": "vulnerable/javascript/cmdi_001.js",
+      "kind": "vulnerable",
+      "expected": [
+        "cmdi"
+      ],
+      "found": [],
+      "findings_count": 0,
+      "tp": [],
+      "fn": [
+        "cmdi"
+      ],
+      "fp_here": []
+    },
+    {
+      "file": "vulnerable/javascript/open_redirect_001.js",
+      "kind": "vulnerable",
+      "expected": [
+        "open_redirect"
+      ],
+      "found": [],
+      "findings_count": 0,
+      "tp": [],
+      "fn": [
+        "open_redirect"
+      ],
+      "fp_here": []
+    },
+    {
+      "file": "vulnerable/javascript/path_traversal_001.js",
+      "kind": "vulnerable",
+      "expected": [
+        "path_traversal"
+      ],
+      "found": [
+        "path_traversal"
+      ],
+      "findings_count": 1,
+      "tp": [
+        "path_traversal"
+      ],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "vulnerable/javascript/proto_pollution_001.js",
+      "kind": "vulnerable",
+      "expected": [
+        "proto_pollution"
+      ],
+      "found": [
+        "proto_pollution"
+      ],
+      "findings_count": 1,
+      "tp": [
+        "proto_pollution"
+      ],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "vulnerable/javascript/sqli_001.js",
+      "kind": "vulnerable",
+      "expected": [
+        "sqli"
+      ],
+      "found": [
+        "sqli"
+      ],
+      "findings_count": 3,
+      "tp": [
+        "sqli"
+      ],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "vulnerable/javascript/xss_001.js",
+      "kind": "vulnerable",
+      "expected": [
+        "xss"
+      ],
+      "found": [
+        "xss"
+      ],
+      "findings_count": 3,
+      "tp": [
+        "xss"
+      ],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "vulnerable/php/cmdi_001.php",
+      "kind": "vulnerable",
+      "expected": [
+        "cmdi"
+      ],
+      "found": [
+        "cmdi",
+        "xss"
+      ],
+      "findings_count": 2,
+      "tp": [
+        "cmdi"
+      ],
+      "fn": [],
+      "fp_here": [
+        "xss"
+      ]
+    },
+    {
+      "file": "vulnerable/php/path_traversal_001.php",
+      "kind": "vulnerable",
+      "expected": [
+        "path_traversal"
+      ],
+      "found": [
+        "path_traversal"
+      ],
+      "findings_count": 1,
+      "tp": [
+        "path_traversal"
+      ],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "vulnerable/php/sqli_001.php",
+      "kind": "vulnerable",
+      "expected": [
+        "sqli"
+      ],
+      "found": [
+        "sqli",
+        "xss"
+      ],
+      "findings_count": 4,
+      "tp": [
+        "sqli"
+      ],
+      "fn": [],
+      "fp_here": [
+        "xss"
+      ]
+    },
+    {
+      "file": "vulnerable/php/xss_001.php",
+      "kind": "vulnerable",
+      "expected": [
+        "xss"
+      ],
+      "found": [
+        "xss"
+      ],
+      "findings_count": 1,
+      "tp": [
+        "xss"
+      ],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "vulnerable/python/cmdi_001.py",
+      "kind": "vulnerable",
+      "expected": [
+        "cmdi"
+      ],
+      "found": [
+        "cmdi"
+      ],
+      "findings_count": 1,
+      "tp": [
+        "cmdi"
+      ],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "vulnerable/python/cmdi_002.py",
+      "kind": "vulnerable",
+      "expected": [
+        "cmdi"
+      ],
+      "found": [
+        "cmdi"
+      ],
+      "findings_count": 2,
+      "tp": [
+        "cmdi"
+      ],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "vulnerable/python/deserialization_001.py",
+      "kind": "vulnerable",
+      "expected": [
+        "deserialization"
+      ],
+      "found": [
+        "deserialization",
+        "unknown"
+      ],
+      "findings_count": 3,
+      "tp": [
+        "deserialization"
+      ],
+      "fn": [],
+      "fp_here": [
+        "unknown"
+      ]
+    },
+    {
+      "file": "vulnerable/python/interprocedural_sqli.py",
+      "kind": "vulnerable",
+      "expected": [
+        "sqli"
+      ],
+      "found": [
+        "sqli"
+      ],
+      "findings_count": 1,
+      "tp": [
+        "sqli"
+      ],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "vulnerable/python/path_traversal_001.py",
+      "kind": "vulnerable",
+      "expected": [
+        "path_traversal"
+      ],
+      "found": [
+        "path_traversal"
+      ],
+      "findings_count": 1,
+      "tp": [
+        "path_traversal"
+      ],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "vulnerable/python/sqli_001.py",
+      "kind": "vulnerable",
+      "expected": [
+        "sqli"
+      ],
+      "found": [
+        "sqli"
+      ],
+      "findings_count": 2,
+      "tp": [
+        "sqli"
+      ],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "vulnerable/python/sqli_002.py",
+      "kind": "vulnerable",
+      "expected": [
+        "sqli"
+      ],
+      "found": [
+        "sqli"
+      ],
+      "findings_count": 1,
+      "tp": [
+        "sqli"
+      ],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "vulnerable/python/ssrf_001.py",
+      "kind": "vulnerable",
+      "expected": [
+        "ssrf"
+      ],
+      "found": [
+        "ssrf"
+      ],
+      "findings_count": 1,
+      "tp": [
+        "ssrf"
+      ],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "vulnerable/python/ssti_001.py",
+      "kind": "vulnerable",
+      "expected": [
+        "ssti"
+      ],
+      "found": [],
+      "findings_count": 0,
+      "tp": [],
+      "fn": [
+        "ssti"
+      ],
+      "fp_here": []
+    },
+    {
+      "file": "vulnerable/python/xss_001.py",
+      "kind": "vulnerable",
+      "expected": [
+        "xss"
+      ],
+      "found": [
+        "ssti",
+        "xss"
+      ],
+      "findings_count": 3,
+      "tp": [
+        "xss"
+      ],
+      "fn": [],
+      "fp_here": [
+        "ssti"
+      ]
+    },
+    {
+      "file": "safe/go/html_template.go",
+      "kind": "safe",
+      "expected": [],
+      "found": [],
+      "findings_count": 0,
+      "tp": [],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "safe/go/parameterized_query.go",
+      "kind": "safe",
+      "expected": [],
+      "found": [],
+      "findings_count": 0,
+      "tp": [],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "safe/go/validated_path.go",
+      "kind": "safe",
+      "expected": [],
+      "found": [
+        "path_traversal"
+      ],
+      "findings_count": 1,
+      "tp": [],
+      "fn": [],
+      "fp_here": [
+        "path_traversal"
+      ]
+    },
+    {
+      "file": "safe/java/prepared_statement.java",
+      "kind": "safe",
+      "expected": [],
+      "found": [],
+      "findings_count": 0,
+      "tp": [],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "safe/java/safe_xml.java",
+      "kind": "safe",
+      "expected": [],
+      "found": [
+        "unknown",
+        "xxe"
+      ],
+      "findings_count": 2,
+      "tp": [],
+      "fn": [],
+      "fp_here": [
+        "unknown",
+        "xxe"
+      ]
+    },
+    {
+      "file": "safe/java/spring_data_jpa.java",
+      "kind": "safe",
+      "expected": [],
+      "found": [],
+      "findings_count": 0,
+      "tp": [],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "safe/javascript/parameterized_query.js",
+      "kind": "safe",
+      "expected": [],
+      "found": [],
+      "findings_count": 0,
+      "tp": [],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "safe/javascript/safe_redirect.js",
+      "kind": "safe",
+      "expected": [],
+      "found": [],
+      "findings_count": 0,
+      "tp": [],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "safe/javascript/sanitized_html.js",
+      "kind": "safe",
+      "expected": [],
+      "found": [],
+      "findings_count": 0,
+      "tp": [],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "safe/php/basename_safe.php",
+      "kind": "safe",
+      "expected": [],
+      "found": [
+        "path_traversal"
+      ],
+      "findings_count": 2,
+      "tp": [],
+      "fn": [],
+      "fp_here": [
+        "path_traversal"
+      ]
+    },
+    {
+      "file": "safe/php/htmlspecialchars.php",
+      "kind": "safe",
+      "expected": [],
+      "found": [
+        "xss"
+      ],
+      "findings_count": 1,
+      "tp": [],
+      "fn": [],
+      "fp_here": [
+        "xss"
+      ]
+    },
+    {
+      "file": "safe/php/prepared_pdo.php",
+      "kind": "safe",
+      "expected": [],
+      "found": [
+        "sqli",
+        "xss"
+      ],
+      "findings_count": 2,
+      "tp": [],
+      "fn": [],
+      "fp_here": [
+        "sqli",
+        "xss"
+      ]
+    },
+    {
+      "file": "safe/python/bleach_clean.py",
+      "kind": "safe",
+      "expected": [],
+      "found": [],
+      "findings_count": 0,
+      "tp": [],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "safe/python/django_orm_filter.py",
+      "kind": "safe",
+      "expected": [],
+      "found": [],
+      "findings_count": 0,
+      "tp": [],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "safe/python/html_escaped.py",
+      "kind": "safe",
+      "expected": [],
+      "found": [],
+      "findings_count": 0,
+      "tp": [],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "safe/python/path_realpath.py",
+      "kind": "safe",
+      "expected": [],
+      "found": [
+        "path_traversal"
+      ],
+      "findings_count": 3,
+      "tp": [],
+      "fn": [],
+      "fp_here": [
+        "path_traversal"
+      ]
+    },
+    {
+      "file": "safe/python/pickle_safe.py",
+      "kind": "safe",
+      "expected": [],
+      "found": [],
+      "findings_count": 0,
+      "tp": [],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "safe/python/shlex_quoted.py",
+      "kind": "safe",
+      "expected": [],
+      "found": [
+        "cmdi"
+      ],
+      "findings_count": 2,
+      "tp": [],
+      "fn": [],
+      "fp_here": [
+        "cmdi"
+      ]
+    },
+    {
+      "file": "safe/python/sqlalchemy_parameterized.py",
+      "kind": "safe",
+      "expected": [],
+      "found": [
+        "sqli"
+      ],
+      "findings_count": 1,
+      "tp": [],
+      "fn": [],
+      "fp_here": [
+        "sqli"
+      ]
+    },
+    {
+      "file": "safe/python/subprocess_list.py",
+      "kind": "safe",
+      "expected": [],
+      "found": [],
+      "findings_count": 0,
+      "tp": [],
+      "fn": [],
+      "fp_here": []
+    },
+    {
+      "file": "safe/python/werkzeug_secure.py",
+      "kind": "safe",
+      "expected": [],
+      "found": [
+        "path_traversal"
+      ],
+      "findings_count": 2,
+      "tp": [],
+      "fn": [],
+      "fp_here": [
+        "path_traversal"
+      ]
+    },
+    {
+      "file": "safe/python/yaml_safe_load.py",
+      "kind": "safe",
+      "expected": [],
+      "found": [],
+      "findings_count": 0,
+      "tp": [],
+      "fn": [],
+      "fp_here": []
+    }
+  ]
+}

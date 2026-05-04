@@ -28,6 +28,32 @@ ALWAYS_SCAN = {".env", ".env.local", ".env.production", ".env.staging",
                ".env.example", ".envrc", "credentials", ".netrc"}
 
 
+def scan_file_for_pem_blocks(text: str, file_path: str) -> list:
+    """Detect complete PEM blocks in a file (handles multi-line keys)."""
+    findings = []
+    # Match BEGIN ... END blocks
+    pem_pattern = re.compile(
+        r"-----BEGIN ([A-Z ]+)-----[\s\S]*?-----END \1-----",
+        re.MULTILINE,
+    )
+    for m in pem_pattern.finditer(text):
+        key_type = m.group(1).strip()
+        if any(t in key_type for t in ("PRIVATE KEY", "CERTIFICATE", "PGP", "RSA", "EC", "DSA", "OPENSSH")):
+            severity = "critical" if "PRIVATE" in key_type else "medium"
+            start_line = text[:m.start()].count("\n") + 1
+            end_line = text[:m.end()].count("\n") + 1
+            findings.append({
+                "file_path": file_path,
+                "line_start": start_line,
+                "line_end": end_line,
+                "secret_type": "pem_block_" + key_type.lower().replace(" ", "_"),
+                "evidence": f"-----BEGIN {key_type}----- ... -----END {key_type}-----",
+                "severity": severity,
+                "detection_method": "pem_block_scan",
+            })
+    return findings
+
+
 def should_scan_file(file_path: Path) -> bool:
     name = file_path.name.lower()
     if name in ALWAYS_SCAN or any(name.endswith(ext) for ext in ALWAYS_SCAN):
@@ -60,11 +86,32 @@ def scan_path(base_path: Path, min_entropy: float = HIGH_ENTROPY_THRESHOLD,
             continue
 
         lines = read_file_lines(file_path)
+        rel_path = str(file_path.relative_to(base_path))
+
+        # Per-line secret scan
+        line_findings = []
         for i, line in enumerate(lines, start=1):
-            hits = scan_line_for_secrets(line, i, str(file_path.relative_to(base_path)))
+            hits = scan_line_for_secrets(line, i, rel_path)
             # Filter by entropy threshold
             hits = [h for h in hits if h.get("entropy", 0) >= min_entropy or h.get("detection_method") == "pattern"]
-            all_findings.extend(hits)
+            line_findings.extend(hits)
+
+        # Multi-line PEM block scan on full file text
+        full_text = "\n".join(lines)
+        pem_findings = scan_file_for_pem_blocks(full_text, rel_path)
+
+        if pem_findings:
+            # Build set of line ranges covered by PEM blocks
+            pem_ranges = [(pf["line_start"], pf["line_end"]) for pf in pem_findings]
+            # Remove per-line findings whose line falls inside a PEM block range
+            filtered_line_findings = [
+                lf for lf in line_findings
+                if not any(start <= lf["line_start"] <= end for start, end in pem_ranges)
+            ]
+            all_findings.extend(filtered_line_findings)
+            all_findings.extend(pem_findings)
+        else:
+            all_findings.extend(line_findings)
 
     return all_findings
 

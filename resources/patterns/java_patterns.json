@@ -10,15 +10,25 @@
     {"id": "java-cmdi-001", "regex": "Runtime\\.getRuntime\\(\\)\\.exec\\s*\\(", "vuln_type": "cmdi", "confidence": "possible", "description": "Runtime.exec() — verify argument is not user-controlled"},
     {"id": "java-cmdi-002", "regex": "ProcessBuilder\\s*\\(.*\\+", "vuln_type": "cmdi", "confidence": "likely", "description": "ProcessBuilder with string concatenation — command injection risk"}
   ],
+  "ldap_injection": [
+    {"id": "JAVA-LDAP-001", "regex": "dirContext\\.search\\s*\\(", "description": "LDAP dirContext.search with potential injection", "severity": "high", "cwe": 90},
+    {"id": "JAVA-LDAP-002", "regex": "ldapTemplate\\.search\\s*\\(", "description": "Spring LDAP template search", "severity": "high", "cwe": 90}
+  ],
   "xxe": [
     {"id": "java-xxe-001", "regex": "DocumentBuilderFactory\\.newInstance\\s*\\(\\s*\\)", "vuln_type": "xxe", "confidence": "possible", "description": "DocumentBuilderFactory — verify external entity processing is disabled"},
     {"id": "java-xxe-002", "regex": "SAXParserFactory\\.newInstance\\s*\\(\\s*\\)", "vuln_type": "xxe", "confidence": "possible", "description": "SAXParserFactory — verify external entity processing is disabled"},
-    {"id": "java-xxe-003", "regex": "XMLInputFactory\\.newInstance\\s*\\(\\s*\\)", "vuln_type": "xxe", "confidence": "possible", "description": "XMLInputFactory — verify IS_SUPPORTING_EXTERNAL_ENTITIES is false"}
+    {"id": "java-xxe-003", "regex": "XMLInputFactory\\.newInstance\\s*\\(\\s*\\)", "vuln_type": "xxe", "confidence": "possible", "description": "XMLInputFactory — verify IS_SUPPORTING_EXTERNAL_ENTITIES is false"},
+    {"id": "JAVA-XXE-001", "regex": "DocumentBuilderFactory\\.newInstance\\s*\\(\\s*\\)", "description": "DocumentBuilder without disabling external entity resolution", "severity": "high", "cwe": 611},
+    {"id": "JAVA-XXE-002", "regex": "XMLDecoder\\s*\\(", "description": "XMLDecoder deserialization (always unsafe)", "severity": "critical", "cwe": 611},
+    {"id": "JAVA-XXE-003", "regex": "SAXParserFactory\\.newInstance\\s*\\(\\s*\\)", "description": "SAXParser without disabling external entities", "severity": "medium", "cwe": 611}
   ],
   "deserialization": [
     {"id": "java-deser-001", "regex": "ObjectInputStream\\s*\\(", "vuln_type": "deserialization", "confidence": "possible", "description": "ObjectInputStream — verify input is from trusted source"},
     {"id": "java-deser-002", "regex": "readObject\\s*\\(\\s*\\)", "vuln_type": "deserialization", "confidence": "possible", "description": "readObject() — verify deserialization is safe"},
-    {"id": "java-deser-003", "regex": "XStream\\.fromXML\\s*\\(", "vuln_type": "deserialization", "confidence": "likely", "description": "XStream.fromXML() with untrusted data — RCE risk"}
+    {"id": "java-deser-003", "regex": "XStream\\.fromXML\\s*\\(", "vuln_type": "deserialization", "confidence": "likely", "description": "XStream.fromXML() with untrusted data — RCE risk"},
+    {"id": "JAVA-DESER-001", "regex": "ObjectInputStream\\s*\\(", "description": "Java ObjectInputStream deserialization", "severity": "critical", "cwe": 502},
+    {"id": "JAVA-DESER-002", "regex": "InvokerTransformer\\s*\\(", "description": "Commons Collections gadget chain", "severity": "critical", "cwe": 502},
+    {"id": "JAVA-DESER-003", "regex": "TemplatesImpl\\s*\\(", "description": "XSLT deserialization gadget", "severity": "critical", "cwe": 502}
   ],
   "path_traversal": [
     {"id": "java-pt-001", "regex": "new\\s+FileInputStream\\s*\\(.*getParameter", "vuln_type": "path_traversal", "confidence": "likely", "description": "FileInputStream with request parameter"},

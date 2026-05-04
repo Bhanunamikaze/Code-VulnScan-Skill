@@ -37,6 +37,22 @@
     {"id": "js-crypto-003", "regex": "createHash\\s*\\(['\"]sha1['\"]\\)", "vuln_type": "weak_crypto", "confidence": "possible", "description": "SHA1 hash — insecure for security-sensitive use"}
   ],
   "open_redirect": [
-    {"id": "js-or-001", "regex": "res\\.redirect\\s*\\([^)]*(?:req\\.|params\\.|query\\.)", "vuln_type": "open_redirect", "confidence": "likely", "description": "Express redirect with URL from request — verify URL is whitelisted"}
+    {"id": "js-or-001", "regex": "res\\.redirect\\s*\\([^)]*(?:req\\.|params\\.|query\\.)", "vuln_type": "open_redirect", "confidence": "likely", "description": "Express redirect with URL from request — verify URL is whitelisted"},
+    {"id": "JS-REDIR-001", "regex": "res\\.redirect\\s*\\(\\s*req\\.(?:query|body|params)", "description": "Open redirect via unvalidated request param", "severity": "medium", "cwe": 601},
+    {"id": "JS-REDIR-002", "regex": "location\\.href\\s*=\\s*(?:req|request|params|query)\\.", "description": "Client-side open redirect", "severity": "medium", "cwe": 601}
+  ],
+  "prototype_pollution_extended": [
+    {"id": "JS-PROTO-001", "regex": "Object\\.assign\\s*\\(\\s*\\{\\s*\\}\\s*,\\s*req\\.", "description": "Prototype pollution via Object.assign with req body", "severity": "high", "cwe": 1321},
+    {"id": "JS-PROTO-002", "regex": "\\[\\s*['\"]__proto__['\"]\\s*\\]", "description": "Explicit __proto__ property access", "severity": "high", "cwe": 1321},
+    {"id": "JS-PROTO-003", "regex": "\\[\\s*['\"]constructor['\"]\\s*\\]\\s*\\[\\s*['\"]prototype['\"]", "description": "constructor.prototype access via bracket notation", "severity": "high", "cwe": 1321}
+  ],
+  "nosql_injection": [
+    {"id": "JS-NOSQL-001", "regex": "\\.find\\s*\\(\\s*req\\.", "description": "MongoDB find with raw request body", "severity": "critical", "cwe": 943},
+    {"id": "JS-NOSQL-002", "regex": "\\$where.*req\\.", "description": "MongoDB $where operator with user input", "severity": "critical", "cwe": 943},
+    {"id": "JS-NOSQL-003", "regex": "collection\\.find\\s*\\(\\s*req\\.body", "description": "MongoDB collection.find with req.body", "severity": "critical", "cwe": 943}
+  ],
+  "xxe": [
+    {"id": "JS-XXE-001", "regex": "DOMParser\\s*\\(\\s*\\)", "description": "DOMParser without entity resolution restrictions", "severity": "medium", "cwe": 611},
+    {"id": "JS-XXE-002", "regex": "parseFromString.*text/xml", "description": "XML parsing via parseFromString", "severity": "medium", "cwe": 611}
   ]
 }

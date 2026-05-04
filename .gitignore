@@ -10,3 +10,4 @@ scripts/utils/__pycache__/
 *.pyc
 *.pyo
 .python-version
+sample_repos/

@@ -80,6 +80,40 @@ SECRET_PATTERNS = [
     (r"eyJ[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}", "jwt_token", "medium"),
     # Generic password in config
     (r'(?i)(?:password|passwd|pwd)\s*[=:]\s*["\']([^"\']{8,})["\']', "generic_password", "medium"),
+    # Anthropic
+    (r"sk-ant-api[0-9]{2}-[A-Za-z0-9_\-]{93}", "anthropic_api_key", "critical"),
+    # OpenAI project key
+    (r"sk-proj-[A-Za-z0-9_\-]{20,80}", "openai_project_key", "high"),
+    # GitLab PAT
+    (r"glpat-[A-Za-z0-9_\-]{20}", "gitlab_pat", "high"),
+    # Bitbucket
+    (r"BBDC-[A-Za-z0-9+/=]{40,}", "bitbucket_app_password", "high"),
+    # Cloudflare
+    (r"(?i)cf[_\-\s]?api[_\-\s]?token\s*[=:]\s*['\"]?([A-Za-z0-9_\-]{40})['\"]?", "cloudflare_api_token", "high"),
+    # Notion
+    (r"secret_[A-Za-z0-9]{43}", "notion_integration_secret", "high"),
+    # Linear
+    (r"lin_api_[A-Za-z0-9]{40}", "linear_api_key", "high"),
+    # Supabase
+    (r"sbp_[A-Za-z0-9]{40}", "supabase_service_key", "critical"),
+    # Firebase FCM
+    (r"AAAA[A-Za-z0-9_\-]{7}:APA91[A-Za-z0-9_\-]{134}", "firebase_fcm_key", "high"),
+    # Datadog
+    (r"(?i)dd[_\-\s]?api[_\-\s]?key\s*[=:]\s*['\"]?([a-f0-9]{32})['\"]?", "datadog_api_key", "high"),
+    # Sentry DSN
+    (r"https://[a-f0-9]{32}@[a-z0-9.\-]+\.ingest\.sentry\.io/[0-9]+", "sentry_dsn", "medium"),
+    (r"https://[a-f0-9]{32}@o[0-9]+\.ingest\.sentry\.io/[0-9]+", "sentry_dsn_v2", "medium"),
+    # DigitalOcean
+    (r"dop_v1_[a-f0-9]{64}", "digitalocean_pat", "high"),
+    # Shopify
+    (r"shpat_[a-fA-F0-9]{32}", "shopify_access_token", "critical"),
+    (r"shpss_[a-fA-F0-9]{32}", "shopify_shared_secret", "high"),
+    # Terraform Cloud
+    (r"[A-Za-z0-9]{14}\.atlasv1\.[A-Za-z0-9_\-]{64}", "terraform_cloud_token", "critical"),
+    # Grafana
+    (r"glsa_[A-Za-z0-9]{32}_[a-f0-9]{8}", "grafana_service_account", "high"),
+    # Age encryption key
+    (r"AGE-SECRET-KEY-1[A-Z2-7]{58}", "age_secret_key", "critical"),
 ]
 
 # Strings that look like secrets but are not
@@ -98,6 +132,8 @@ FALSE_POSITIVE_INDICATORS = [
     r"os\.getenv",
     r"ENV\[",
     r"secrets\.",  # k8s secrets reference
+    r"\bFAKE\b",
+    r"\bDUMMY\b",
 ]
 
 _FP_REGEX = re.compile("|".join(FALSE_POSITIVE_INDICATORS), re.IGNORECASE)

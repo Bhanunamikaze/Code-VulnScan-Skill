@@ -103,6 +103,16 @@ def generate_markdown(run, findings) -> str:
                              (f" (`{f['cvss_vector']}`)" if f["cvss_vector"] else ""))
             lines.append(f"  \n**Confidence:** {f['confidence'].capitalize() if f['confidence'] else 'N/A'}\n")
 
+            # Show nearest route if available
+            if f.get("notes"):
+                try:
+                    notes = json.loads(f["notes"]) if isinstance(f["notes"], str) else f["notes"]
+                    if isinstance(notes, dict) and notes.get("nearest_route"):
+                        r = notes["nearest_route"]
+                        lines.append(f"  \n**Entry Point:** `{r.get('method', 'ANY')} {r.get('path', '?')}` ({Path(r.get('file_path', '')).name}:{r.get('line', '?')})")
+                except (json.JSONDecodeError, TypeError, AttributeError):
+                    pass
+
             if f["description"]:
                 lines.append("#### Description\n")
                 lines.append(f"{f['description']}\n")
@@ -115,12 +125,33 @@ def generate_markdown(run, findings) -> str:
                 lines.append("```\n")
 
             if f["taint_path"]:
-                lines.append("#### Taint Path\n")
+                lines.append("#### Data Flow\n")
                 try:
                     path_steps = json.loads(f["taint_path"]) if isinstance(f["taint_path"], str) else f["taint_path"]
-                    if isinstance(path_steps, list):
-                        for j, step in enumerate(path_steps, 1):
-                            lines.append(f"{j}. `{step}`")
+                    if isinstance(path_steps, list) and path_steps:
+                        if isinstance(path_steps[0], dict):
+                            # Rich format: [{step, file, line, code, role}, ...]
+                            for j, step in enumerate(path_steps, 1):
+                                role = step.get("role", "propagator")
+                                role_label = {
+                                    "source": "SOURCE (user input enters here)",
+                                    "propagator": "PROPAGATES",
+                                    "sink": "SINK (vulnerable call)",
+                                    "sanitizer-bypass": "SANITIZER BYPASS",
+                                }.get(role, role.upper())
+                                file_info = f"`{step.get('file', '')}:{step.get('line', '?')}`"
+                                code = step.get("code", step.get("code_snippet", ""))
+                                lines.append(f"**Step {j} — {role_label}** at {file_info}")
+                                if code:
+                                    lang_hint = f.get("language") or ""
+                                    lines.append(f"```{lang_hint}")
+                                    lines.append(code.strip())
+                                    lines.append("```")
+                                lines.append("")
+                        else:
+                            # Simple list of strings
+                            for j, step in enumerate(path_steps, 1):
+                                lines.append(f"{j}. `{step}`")
                     else:
                         lines.append(f"`{f['taint_path']}`")
                 except (json.JSONDecodeError, TypeError):
