@@ -30,6 +30,7 @@ Installs the Code-VulnScan vulnerability scanning skill for AI coding assistants
 
 Each IDE target installs the skill in that IDE's native format:
   claude / codex / antigravity  →  skills/ directory  (native skill support)
+  cowork                        →  .claude/skills/  (project-scoped; commit to git, shared with team)
   cursor                        →  .cursor/rules/*.mdc  (Cursor MDC rules format)
   windsurf                      →  .windsurf/rules/*.md  (Windsurf rules format)
   copilot                       →  .github/copilot-instructions.md
@@ -45,13 +46,14 @@ Options:
         claude       → ~/.claude/skills/code-vulnscan
         codex        → ~/.codex/skills/code-vulnscan
         antigravity  → <project>/.agent/skills/code-vulnscan
+        cowork       → <project>/.claude/skills/code-vulnscan  (project-scoped, commit to git)
         cursor       → <project>/.cursor/rules/code-vulnscan.mdc
         windsurf     → <project>/.windsurf/rules/code-vulnscan.md
         continue     → <project>/.continue/prompts/vulnscan.prompt
         copilot      → <project>/.github/copilot-instructions.md
         cline        → <project>/.clinerules
         global       → claude + codex (user-wide)
-        project      → antigravity + cursor + windsurf + continue + copilot + cline
+        project      → antigravity + cowork + cursor + windsurf + continue + copilot + cline
         all          → global + project (every target)
 
   --project-dir <path>         Project directory for project-local installs (default: cwd)
@@ -365,6 +367,11 @@ install_copilot() {
     copy_skill "${SRC_DIR}" "${github_dir}/skills/${SKILL_NAME}" "GitHub Copilot (.github/skills/)" || true
 }
 
+# Claude Cowork — project-scoped .claude/skills/ (shared via git with the whole team)
+install_cowork() {
+    copy_skill "${SRC_DIR}" "${PROJECT_DIR}/.claude/skills/${SKILL_NAME}" "Cowork (.claude/skills/)"
+}
+
 # Cline — .clinerules  (project-level instruction file)
 install_cline() {
     local rules_file="${PROJECT_DIR}/.clinerules"
@@ -413,7 +420,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-VALID_TARGETS="claude codex antigravity cursor windsurf continue copilot cline global project all"
+VALID_TARGETS="claude codex antigravity cowork cursor windsurf continue copilot cline global project all"
 if ! echo "${VALID_TARGETS}" | grep -qw "${TARGET}"; then
     echo "Error: invalid --target: ${TARGET}" >&2
     echo "Valid targets: ${VALID_TARGETS}" >&2
@@ -451,9 +458,16 @@ if [[ "${ONLINE_MODE}" -eq 1 ]]; then
         curl -sL "https://github.com/Bhanunamikaze/Code-VulnScan-Skill/archive/refs/heads/main.tar.gz" \
             | tar -xz -C "${TEMP_DIR}" --strip-components=1
     else
-        echo "Downloading latest tag package: ${LATEST_TAG}"
-        curl -sL "https://github.com/Bhanunamikaze/Code-VulnScan-Skill/archive/refs/tags/${LATEST_TAG}.tar.gz" \
-            | tar -xz -C "${TEMP_DIR}" --strip-components=1
+        ASSET_URL="https://github.com/Bhanunamikaze/Code-VulnScan-Skill/releases/download/${LATEST_TAG}/code-vulnscan-skill-${LATEST_TAG}.tar.gz"
+        FALLBACK_URL="https://github.com/Bhanunamikaze/Code-VulnScan-Skill/archive/refs/tags/${LATEST_TAG}.tar.gz"
+        echo "Downloading latest release package: ${LATEST_TAG}"
+        if curl -fsSL --output "${TEMP_DIR}/package.tar.gz" "${ASSET_URL}" 2>/dev/null; then
+            tar -xz -C "${TEMP_DIR}" --strip-components=1 -f "${TEMP_DIR}/package.tar.gz"
+            rm -f "${TEMP_DIR}/package.tar.gz"
+        else
+            echo "Release asset not available, falling back to source archive..."
+            curl -sL "${FALLBACK_URL}" | tar -xz -C "${TEMP_DIR}" --strip-components=1
+        fi
     fi
     SRC_DIR="${TEMP_DIR}"
     echo "Using downloaded package source: ${SRC_DIR}"
@@ -502,6 +516,7 @@ case "${TARGET}" in
     claude)      install_tool_auto "claude" ;;
     codex)       install_tool_auto "codex" ;;
     antigravity) install_tool_auto "antigravity" ;;
+    cowork)      install_cowork ;;
     cursor)      install_cursor ;;
     windsurf)    install_windsurf ;;
     continue)    install_continue ;;
@@ -513,6 +528,7 @@ case "${TARGET}" in
         ;;
     project)
         install_tool_auto "antigravity" || true
+        install_cowork                  || true
         install_cursor                  || true
         install_windsurf                || true
         install_continue                || true
@@ -523,6 +539,7 @@ case "${TARGET}" in
         install_tool_global "claude"    || true
         install_tool_global "codex"     || true
         install_tool_auto "antigravity" || true
+        install_cowork                  || true
         install_cursor                  || true
         install_windsurf                || true
         install_continue                || true

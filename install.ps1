@@ -58,6 +58,7 @@ Code-VulnScan Skill Installer (Windows / PowerShell)
 
 Each IDE target installs the skill in that IDE's native format:
   claude / codex / antigravity  ->  skills/ directory  (native skill support)
+  cowork                        ->  .claude\skills\  (project-scoped; commit to git, shared with team)
   cursor                        ->  .cursor\rules\code-vulnscan.mdc  (MDC rules)
   windsurf                      ->  .windsurf\rules\code-vulnscan.md
   copilot                       ->  .github\copilot-instructions.md
@@ -73,13 +74,14 @@ Options:
         claude       ->  ~\.claude\skills\code-vulnscan
         codex        ->  ~\.codex\skills\code-vulnscan
         antigravity  ->  <project>\.agent\skills\code-vulnscan
+        cowork       ->  <project>\.claude\skills\code-vulnscan  (project-scoped, commit to git)
         cursor       ->  <project>\.cursor\rules\code-vulnscan.mdc
         windsurf     ->  <project>\.windsurf\rules\code-vulnscan.md
         continue     ->  <project>\.continue\prompts\vulnscan.prompt
         copilot      ->  <project>\.github\copilot-instructions.md
         cline        ->  <project>\.clinerules
         global       ->  claude + codex (user-wide)
-        project      ->  antigravity + cursor + windsurf + continue + copilot + cline
+        project      ->  antigravity + cowork + cursor + windsurf + continue + copilot + cline
         all          ->  global + project (every target)
 
   --project-dir <path>         Project directory for project-local installs (default: cwd)
@@ -360,6 +362,13 @@ function Install-Copilot {
     try { Copy-Skill -Src $Src -Dest $dest -Label 'GitHub Copilot (.github\skills\)' } catch { Write-Warning "Skipped skill copy: $_" }
 }
 
+# Claude Cowork — project-scoped .claude/skills/ (shared via git with the whole team)
+function Install-Cowork {
+    param([Parameter(Mandatory = $true)][string]$Src)
+    $dest = Join-Path (Join-Path $PROJECT_DIR '.claude\skills') $SKILL_NAME
+    Copy-Skill -Src $Src -Dest $dest -Label 'Cowork (.claude\skills\)'
+}
+
 # Cline — .clinerules  (project-level instruction file)
 function Install-Cline {
     param([Parameter(Mandatory = $true)][string]$Src)
@@ -429,7 +438,7 @@ while ($idx -lt $args.Count) {
     }
 }
 
-$VALID_TARGETS = @('claude','codex','antigravity','cursor','windsurf','continue','copilot','cline','global','project','all')
+$VALID_TARGETS = @('claude','codex','antigravity','cowork','cursor','windsurf','continue','copilot','cline','global','project','all')
 if ($TARGET -notin $VALID_TARGETS) {
     throw "Error: invalid --target: $TARGET`nValid targets: $($VALID_TARGETS -join ', ')"
 }
@@ -448,24 +457,31 @@ $SHOULD_CLONE = $false
 
 if ($ONLINE_MODE) {
     Write-Host 'Fetching latest release tag...'
-    $zipUrl = ''
+    $TEMP_DIR = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Path $TEMP_DIR -Force | Out-Null
+    $zipPath = Join-Path $TEMP_DIR 'package.zip'
     try {
         $releaseInfo = Invoke-RestMethod `
             -Uri 'https://api.github.com/repos/Bhanunamikaze/Code-VulnScan-Skill/releases/latest' `
             -ErrorAction Stop
         $latestTag = $releaseInfo.tag_name
         if ([string]::IsNullOrWhiteSpace($latestTag)) { throw 'Tag empty' }
-        Write-Host "Downloading latest tag package: $latestTag"
-        $zipUrl = "https://github.com/Bhanunamikaze/Code-VulnScan-Skill/archive/refs/tags/${latestTag}.zip"
+        Write-Host "Downloading latest release package: $latestTag"
+        $assetUrl = "https://github.com/Bhanunamikaze/Code-VulnScan-Skill/releases/download/${latestTag}/code-vulnscan-skill-${latestTag}.zip"
+        try {
+            Invoke-WebRequest -Uri $assetUrl -OutFile $zipPath -ErrorAction Stop
+        }
+        catch {
+            Write-Host 'Release asset not available, falling back to source archive...'
+            $fallbackUrl = "https://github.com/Bhanunamikaze/Code-VulnScan-Skill/archive/refs/tags/${latestTag}.zip"
+            Invoke-WebRequest -Uri $fallbackUrl -OutFile $zipPath
+        }
     }
     catch {
         Write-Host 'Could not determine latest tag, falling back to main branch archive...'
-        $zipUrl = 'https://github.com/Bhanunamikaze/Code-VulnScan-Skill/archive/refs/heads/main.zip'
+        $mainUrl = 'https://github.com/Bhanunamikaze/Code-VulnScan-Skill/archive/refs/heads/main.zip'
+        Invoke-WebRequest -Uri $mainUrl -OutFile $zipPath
     }
-    $TEMP_DIR = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString('N'))
-    New-Item -ItemType Directory -Path $TEMP_DIR -Force | Out-Null
-    $zipPath = Join-Path $TEMP_DIR 'package.zip'
-    Invoke-WebRequest -Uri $zipUrl -OutFile $zipPath
     Expand-Archive -Path $zipPath -DestinationPath $TEMP_DIR -Force
     Remove-Item -Path $zipPath -Force
     $extractedDir = Get-ChildItem -Path $TEMP_DIR -Directory | Select-Object -First 1
@@ -522,6 +538,7 @@ try {
         'claude'      { Install-ToolAuto  -Src $SRC_DIR -Tool 'claude'      -SkillName $SKILL_NAME }
         'codex'       { Install-ToolAuto  -Src $SRC_DIR -Tool 'codex'       -SkillName $SKILL_NAME }
         'antigravity' { Install-ToolAuto  -Src $SRC_DIR -Tool 'antigravity' -SkillName $SKILL_NAME }
+        'cowork'      { Install-Cowork    -Src $SRC_DIR }
         'cursor'      { Install-Cursor    -Src $SRC_DIR }
         'windsurf'    { Install-Windsurf  -Src $SRC_DIR }
         'continue'    { Install-Continue  -Src $SRC_DIR }
@@ -533,6 +550,7 @@ try {
         }
         'project' {
             try { Install-ToolAuto -Src $SRC_DIR -Tool 'antigravity' -SkillName $SKILL_NAME } catch { Write-Warning "Skipped antigravity: $_" }
+            try { Install-Cowork   -Src $SRC_DIR }                                            catch { Write-Warning "Skipped cowork: $_" }
             try { Install-Cursor   -Src $SRC_DIR }                                            catch { Write-Warning "Skipped cursor: $_" }
             try { Install-Windsurf -Src $SRC_DIR }                                            catch { Write-Warning "Skipped windsurf: $_" }
             try { Install-Continue -Src $SRC_DIR }                                            catch { Write-Warning "Skipped continue: $_" }
@@ -543,6 +561,7 @@ try {
             try { Install-ToolGlobal -Src $SRC_DIR -Tool 'claude' -SkillName $SKILL_NAME }   catch { Write-Warning "Skipped claude-global: $_" }
             try { Install-ToolGlobal -Src $SRC_DIR -Tool 'codex'  -SkillName $SKILL_NAME }   catch { Write-Warning "Skipped codex-global: $_" }
             try { Install-ToolAuto -Src $SRC_DIR -Tool 'antigravity' -SkillName $SKILL_NAME } catch { Write-Warning "Skipped antigravity: $_" }
+            try { Install-Cowork   -Src $SRC_DIR }                                            catch { Write-Warning "Skipped cowork: $_" }
             try { Install-Cursor   -Src $SRC_DIR }                                            catch { Write-Warning "Skipped cursor: $_" }
             try { Install-Windsurf -Src $SRC_DIR }                                            catch { Write-Warning "Skipped windsurf: $_" }
             try { Install-Continue -Src $SRC_DIR }                                            catch { Write-Warning "Skipped continue: $_" }

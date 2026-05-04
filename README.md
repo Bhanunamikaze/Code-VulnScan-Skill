@@ -5,6 +5,7 @@ A deep, flow-aware vulnerability scanning skill for AI coding assistants. Finds 
 [![Supported IDEs](https://img.shields.io/badge/IDEs-Claude%20%7C%20Codex%20%7C%20Cursor%20%7C%20Windsurf%20%7C%20Copilot%20%7C%20Cline%20%7C%20Continue%20%7C%20Antigravity-blue)]()
 [![Languages](https://img.shields.io/badge/Languages-10%2B-green)]()
 [![CVEs](https://img.shields.io/badge/CVE%20Database-100%2B-orange)]()
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ## What it does
 
@@ -35,6 +36,7 @@ Python, JavaScript/TypeScript, Java/Kotlin, Go, PHP, Ruby, C/C++, C#, Rust, Swif
 | IDE | Target flag | Installed file |
 |-----|-------------|---------------|
 | Claude Code (CLI/Desktop) | `--target claude` | `~/.claude/skills/code-vulnscan/` |
+| Claude Code / Cowork (project/team) | `--target cowork` | `<project>/.claude/skills/code-vulnscan/` |
 | OpenAI Codex | `--target codex` | `~/.codex/skills/code-vulnscan/` |
 | Cursor AI | `--target cursor` | `<project>/.cursor/rules/code-vulnscan.mdc` |
 | Windsurf | `--target windsurf` | `<project>/.windsurf/rules/code-vulnscan.md` |
@@ -45,6 +47,42 @@ Python, JavaScript/TypeScript, Java/Kotlin, Go, PHP, Ruby, C/C++, C#, Rust, Swif
 
 ## Installation
 
+All `--online` commands below download the latest release package automatically.
+
+### Quick install (no cloning required)
+
+**Linux / macOS:**
+```bash
+# Default: installs to every target at once
+curl -fsSL https://raw.githubusercontent.com/Bhanunamikaze/Code-VulnScan-Skill/main/install.sh | bash -s -- --online
+
+# Claude Code only
+curl -fsSL https://raw.githubusercontent.com/Bhanunamikaze/Code-VulnScan-Skill/main/install.sh | bash -s -- --online --target claude
+
+# User-wide (Claude + Codex)
+curl -fsSL https://raw.githubusercontent.com/Bhanunamikaze/Code-VulnScan-Skill/main/install.sh | bash -s -- --online --target global
+
+# Every target, scoped to a project
+curl -fsSL https://raw.githubusercontent.com/Bhanunamikaze/Code-VulnScan-Skill/main/install.sh | bash -s -- --online --target all --project-dir /path/to/your/project
+```
+
+**Windows (PowerShell):**
+```powershell
+# Download installer, then run with --online
+irm https://raw.githubusercontent.com/Bhanunamikaze/Code-VulnScan-Skill/main/install.ps1 -OutFile install.ps1
+
+# Default: installs to every target at once
+pwsh ./install.ps1 --online
+
+# Claude Code only
+pwsh ./install.ps1 --online --target claude
+
+# Every target, scoped to a project
+pwsh ./install.ps1 --online --target all --project-dir C:\path\to\your\project
+```
+
+### From source
+
 ```bash
 git clone https://github.com/Bhanunamikaze/Code-VulnScan-Skill.git
 cd Code-VulnScan-Skill
@@ -54,6 +92,9 @@ bash install.sh --target claude
 
 # Codex
 bash install.sh --target codex
+
+# Claude Cowork / project-scoped (installs to .claude/skills/, commit to git to share with team)
+bash install.sh --target cowork --project-dir /path/to/your/project
 
 # GitHub Copilot Chat (writes .github/copilot-instructions.md)
 bash install.sh --target copilot --project-dir /path/to/your/project
@@ -83,24 +124,24 @@ bash install.sh --target all --project-dir /path/to/your/project
 bash install.sh --target claude --install-deps
 ```
 
-**Windows (PowerShell):**
+**Windows (PowerShell) — from source:**
 ```powershell
 # Claude Code
-.\install.ps1 -Target claude
+.\install.ps1 --target claude
 
 # Cursor AI
-.\install.ps1 -Target cursor -ProjectDir C:\path\to\project
+.\install.ps1 --target cursor --project-dir C:\path\to\project
 
 # All targets
-.\install.ps1 -Target all -ProjectDir C:\path\to\project
+.\install.ps1 --target all --project-dir C:\path\to\project
 ```
 
-**Safer remote install (with checksum):**
+**Safer remote install (with checksum verification):**
 ```bash
 curl -fsSLO https://raw.githubusercontent.com/Bhanunamikaze/Code-VulnScan-Skill/main/install.sh
 curl -fsSLO https://raw.githubusercontent.com/Bhanunamikaze/Code-VulnScan-Skill/main/install.sh.sha256
 sha256sum -c install.sh.sha256
-bash install.sh --target claude
+bash install.sh --online
 ```
 
 ## Usage

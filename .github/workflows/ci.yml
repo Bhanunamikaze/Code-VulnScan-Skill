@@ -1,0 +1,106 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - "**"
+    tags:
+      - "*"
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Compile scripts
+        run: |
+          python -m py_compile \
+            scripts/scan.py \
+            scripts/dependency.py \
+            scripts/report.py \
+            scripts/secrets.py \
+            scripts/taint.py \
+            scripts/regex_analyzer.py
+          python -m py_compile \
+            scripts/utils/db.py \
+            scripts/utils/entropy.py \
+            scripts/utils/files.py \
+            scripts/utils/languages.py \
+            scripts/utils/patterns.py
+
+      - name: Run tests
+        run: python -m pytest tests/ -v
+
+  package:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build runtime skill package
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          PACKAGE_ROOT="package/code-vulnscan"
+          DIST_DIR="dist"
+          mkdir -p "${PACKAGE_ROOT}" "${PACKAGE_ROOT}/workspace" "${DIST_DIR}"
+
+          cp SKILL.md "${PACKAGE_ROOT}/"
+          cp -R scripts sub-skills resources "${PACKAGE_ROOT}/"
+          cp install.sh install.ps1 "${PACKAGE_ROOT}/" 2>/dev/null || true
+
+          # Strip build artifacts and dev-only paths
+          find "${PACKAGE_ROOT}" -type d -name "__pycache__" -prune -exec rm -rf {} +
+          find "${PACKAGE_ROOT}" -type f \( -name "*.pyc" -o -name "*.pyo" \) -delete
+
+          touch "${PACKAGE_ROOT}/workspace/.gitkeep"
+
+          tar -czf "${DIST_DIR}/code-vulnscan-skill-${TAG_NAME}.tar.gz" \
+            -C package code-vulnscan
+
+          (
+            cd package
+            zip -qr "../${DIST_DIR}/code-vulnscan-skill-${TAG_NAME}.zip" code-vulnscan
+          )
+
+          sha256sum "${DIST_DIR}/code-vulnscan-skill-${TAG_NAME}.tar.gz" \
+            > "${DIST_DIR}/code-vulnscan-skill-${TAG_NAME}.tar.gz.sha256"
+          sha256sum "${DIST_DIR}/code-vulnscan-skill-${TAG_NAME}.zip" \
+            > "${DIST_DIR}/code-vulnscan-skill-${TAG_NAME}.zip.sha256"
+
+      - name: Upload packaged artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-vulnscan-skill-${{ github.ref_name }}
+          path: |
+            dist/*
+            install.sh
+            install.ps1
+
+      - name: Publish GitHub release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/*
+            install.sh
+            install.ps1
