@@ -1,0 +1,44 @@
+{
+  "sqli": [
+    {"id": "sw-sqli-001", "regex": "sqlite3_exec\\s*\\([^,]+,\\s*[^,]*\\+\\s*\\w", "vuln_type": "sqli", "confidence": "likely", "description": "sqlite3_exec with string concatenation — SQL injection. Use prepared statements"},
+    {"id": "sw-sqli-002", "regex": "sqlite3_exec\\s*\\([^,]+,\\s*[\"'][^\"']*\\\\\\(", "vuln_type": "sqli", "confidence": "likely", "description": "sqlite3_exec with Swift string interpolation — SQL injection"},
+    {"id": "sw-sqli-003", "regex": "NSFetchRequest.*predicate.*NSPredicate\\s*\\(format:\\s*[\"'][^\"']*%@", "vuln_type": "sqli", "confidence": "possible", "description": "CoreData NSPredicate with %@ format — verify value is not user-supplied raw query fragment"},
+    {"id": "sw-sqli-004", "regex": "execute\\s*\\([\"'][^\"']*\\\\\\(", "vuln_type": "sqli", "confidence": "likely", "description": "Database execute with string interpolation — SQL injection"}
+  ],
+  "cmdi": [
+    {"id": "sw-cmdi-001", "regex": "Process\\s*\\(\\s*\\)\\.launch|NSTask\\s*\\(\\s*\\)\\.launch", "vuln_type": "cmdi", "confidence": "possible", "description": "Process/NSTask launch — verify arguments are not user-controlled"},
+    {"id": "sw-cmdi-002", "regex": "\\.arguments\\s*=\\s*\\[[^]]*\\\\\\(", "vuln_type": "cmdi", "confidence": "likely", "description": "Process arguments with string interpolation — command injection"},
+    {"id": "sw-cmdi-003", "regex": "NSWorkspace\\.shared\\.open.*launchApplication", "vuln_type": "cmdi", "confidence": "possible", "description": "NSWorkspace launching application — verify path is not user-supplied"}
+  ],
+  "path_traversal": [
+    {"id": "sw-pt-001", "regex": "URL\\s*\\(fileURLWithPath:\\s*\\w+\\s*\\+", "vuln_type": "path_traversal", "confidence": "likely", "description": "File URL with concatenated path — path traversal risk"},
+    {"id": "sw-pt-002", "regex": "FileManager\\.default\\.(contents|createFile|removeItem).*\\\\\\(", "vuln_type": "path_traversal", "confidence": "likely", "description": "FileManager operation with interpolated path — path traversal"},
+    {"id": "sw-pt-003", "regex": "contentsOfFile:\\s*\\w+(?!\\.bundle)", "vuln_type": "path_traversal", "confidence": "possible", "description": "NSString/Data contentsOfFile with variable path — verify restricted to app container"},
+    {"id": "sw-pt-004", "regex": "appendingPathComponent\\s*\\([^)]*request\\|userInput\\|param", "vuln_type": "path_traversal", "confidence": "likely", "description": "appendingPathComponent with user input — path traversal"}
+  ],
+  "keychain_misuse": [
+    {"id": "sw-kc-001", "regex": "kSecAttrAccessible.*kSecAttrAccessibleAlways(?!ThisDevice)", "vuln_type": "info_disclosure", "confidence": "possible", "description": "Keychain item accessible always (even when locked) — use kSecAttrAccessibleWhenUnlockedThisDeviceOnly"},
+    {"id": "sw-kc-002", "regex": "UserDefaults.*password|UserDefaults.*token|UserDefaults.*secret", "vuln_type": "info_disclosure", "confidence": "likely", "description": "Sensitive data stored in UserDefaults — use Keychain instead"},
+    {"id": "sw-kc-003", "regex": "NSUserDefaults.*password|NSUserDefaults.*token", "vuln_type": "info_disclosure", "confidence": "likely", "description": "NSUserDefaults storing sensitive data — use Keychain"}
+  ],
+  "transport_security": [
+    {"id": "sw-ats-001", "regex": "NSAllowsArbitraryLoads.*true|NSExceptionAllowsInsecureHTTPLoads.*true", "vuln_type": "tls_bypass", "confidence": "confirmed", "description": "ATS exception allows insecure HTTP — remove exception or restrict to specific domains"},
+    {"id": "sw-ats-002", "regex": "NSAllowsLocalNetworking.*true", "vuln_type": "tls_bypass", "confidence": "possible", "description": "ATS allows local networking — acceptable for debug but verify not in production"},
+    {"id": "sw-ats-003", "regex": "URLSession.*delegate.*urlSession.*didReceive.*challenge.*completionHandler.*ServerTrust.*nil", "vuln_type": "tls_bypass", "confidence": "likely", "description": "URLSession accepting invalid TLS certificate in challenge handler"}
+  ],
+  "crypto": [
+    {"id": "sw-crypto-001", "regex": "CCAlgorithm.*kCCAlgorithmDES|kCCAlgorithm3DES", "vuln_type": "weak_crypto", "confidence": "confirmed", "description": "CommonCrypto DES/3DES — insecure, use AES-256-GCM"},
+    {"id": "sw-crypto-002", "regex": "CCOptions.*kCCOptionECBMode", "vuln_type": "weak_crypto", "confidence": "confirmed", "description": "AES ECB mode — deterministic, leaks patterns. Use GCM or CBC with random IV"},
+    {"id": "sw-crypto-003", "regex": "Insecure\\.MD5\\.hash|Insecure\\.SHA1\\.hash", "vuln_type": "weak_crypto", "confidence": "possible", "description": "CryptoKit insecure hash (MD5/SHA1) — use SHA256 or SHA512 for security"},
+    {"id": "sw-crypto-004", "regex": "arc4random\\s*\\(\\s*\\)|drand48\\s*\\(\\s*\\)", "vuln_type": "insecure_random", "confidence": "possible", "description": "Non-CSPRNG function — use SecRandomCopyBytes for security-sensitive random data"}
+  ],
+  "webview": [
+    {"id": "sw-webview-001", "regex": "WKUserContentController.*add\\s*\\([^,]+,\\s*name:", "vuln_type": "xss", "confidence": "possible", "description": "WKWebView message handler — verify JS messages are validated and sanitized"},
+    {"id": "sw-webview-002", "regex": "evaluateJavaScript\\s*\\([^)]*\\\\\\(", "vuln_type": "xss", "confidence": "likely", "description": "evaluateJavaScript with interpolated string — XSS if string contains user input"},
+    {"id": "sw-webview-003", "regex": "allowsInlineMediaPlayback|mediaTypesRequiringUserActionForPlayback", "vuln_type": "xss", "confidence": "possible", "description": "WKWebView media configuration — ensure content loaded is from trusted source"}
+  ],
+  "deeplink": [
+    {"id": "sw-dl-001", "regex": "application.*open.*url.*UIApplication.*sourceApplication", "vuln_type": "deeplink", "confidence": "possible", "description": "URL scheme handler — verify sourceApplication before processing URL parameters"},
+    {"id": "sw-dl-002", "regex": "scene.*openURLContexts|application.*open\\s*url\\s*options", "vuln_type": "deeplink", "confidence": "possible", "description": "Deep link handler — validate URL scheme and parameters before trusting them"}
+  ]
+}

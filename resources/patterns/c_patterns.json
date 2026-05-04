@@ -1,0 +1,51 @@
+{
+  "buffer_overflow": [
+    {"id": "c-bof-001", "regex": "\\bgets\\s*\\(", "vuln_type": "buffer_overflow", "confidence": "confirmed", "description": "gets() has no bounds check — always exploitable. Replace with fgets()"},
+    {"id": "c-bof-002", "regex": "\\bstrcpy\\s*\\(", "vuln_type": "buffer_overflow", "confidence": "likely", "description": "strcpy() has no bounds check — use strlcpy() or strncpy() with length"},
+    {"id": "c-bof-003", "regex": "\\bstrcat\\s*\\(", "vuln_type": "buffer_overflow", "confidence": "likely", "description": "strcat() has no bounds check — use strlcat() or strncat() with remaining size"},
+    {"id": "c-bof-004", "regex": "\\bsprintf\\s*\\(", "vuln_type": "buffer_overflow", "confidence": "likely", "description": "sprintf() has no bounds check — use snprintf() with explicit size"},
+    {"id": "c-bof-005", "regex": "\\bvsprintf\\s*\\(", "vuln_type": "buffer_overflow", "confidence": "likely", "description": "vsprintf() has no bounds check — use vsnprintf()"},
+    {"id": "c-bof-006", "regex": "scanf\\s*\\(\\s*[\"'][^\"']*%s", "vuln_type": "buffer_overflow", "confidence": "likely", "description": "scanf %s without field width — unbounded string read. Use %Ns with explicit size"},
+    {"id": "c-bof-007", "regex": "\\bstrcmp\\s*\\(|\\bstrncmp\\s*\\(", "vuln_type": "buffer_overflow", "confidence": "possible", "description": "String comparison — verify both strings are properly null-terminated"},
+    {"id": "c-bof-008", "regex": "\\bmemcpy\\s*\\([^,]+,[^,]+,\\s*\\w+\\s*\\*\\s*sizeof", "vuln_type": "buffer_overflow", "confidence": "possible", "description": "memcpy with computed size — verify destination buffer is at least that large"},
+    {"id": "c-bof-009", "regex": "\\balloca\\s*\\(", "vuln_type": "buffer_overflow", "confidence": "possible", "description": "alloca() allocates on stack — large or user-controlled size causes stack overflow"},
+    {"id": "c-bof-010", "regex": "\\bwcscpy\\s*\\(|\\bwcscat\\s*\\(", "vuln_type": "buffer_overflow", "confidence": "likely", "description": "Wide-string copy/cat without bounds — use wcslcpy/wcslcat or wcsncpy/wcsncat"},
+    {"id": "c-bof-011", "regex": "char\\s+\\w+\\s*\\[\\s*\\d+\\s*\\].*gets\\s*\\(|fgets.*\\d+\\s*<", "vuln_type": "buffer_overflow", "confidence": "possible", "description": "Fixed-size buffer with potential overflow from read function"}
+  ],
+  "format_string": [
+    {"id": "c-fmt-001", "regex": "printf\\s*\\(\\s*\\w+\\s*\\)", "vuln_type": "format_string", "confidence": "likely", "description": "printf() with single variable argument — format string injection. Use printf(\"%s\", var)"},
+    {"id": "c-fmt-002", "regex": "fprintf\\s*\\(\\s*\\w+\\s*,\\s*\\w+\\s*\\)", "vuln_type": "format_string", "confidence": "likely", "description": "fprintf() with variable as format string"},
+    {"id": "c-fmt-003", "regex": "sprintf\\s*\\(\\s*\\w+\\s*,\\s*\\w+\\s*\\)", "vuln_type": "format_string", "confidence": "likely", "description": "sprintf() with variable as format string"},
+    {"id": "c-fmt-004", "regex": "syslog\\s*\\([^,]+,\\s*\\w+\\s*\\)", "vuln_type": "format_string", "confidence": "likely", "description": "syslog() with variable as format string"},
+    {"id": "c-fmt-005", "regex": "err\\s*\\([^,]+,\\s*\\w+\\s*\\)|warn\\s*\\([^,]+,\\s*\\w+\\s*\\)", "vuln_type": "format_string", "confidence": "possible", "description": "err()/warn() with variable as format string"}
+  ],
+  "integer_overflow": [
+    {"id": "c-int-001", "regex": "malloc\\s*\\(\\s*\\w+\\s*\\*\\s*sizeof", "vuln_type": "integer_overflow", "confidence": "possible", "description": "malloc(n * sizeof) — integer overflow if n is large. Use calloc() or check for overflow before multiply"},
+    {"id": "c-int-002", "regex": "malloc\\s*\\([^)]*\\+\\s*\\d+\\s*\\)", "vuln_type": "integer_overflow", "confidence": "possible", "description": "malloc with addition — verify no integer overflow on size"},
+    {"id": "c-int-003", "regex": "realloc\\s*\\([^,]+,\\s*\\w+\\s*\\*", "vuln_type": "integer_overflow", "confidence": "possible", "description": "realloc with multiply in size argument — integer overflow risk"},
+    {"id": "c-int-004", "regex": "calloc\\s*\\(\\s*\\w+\\s*,\\s*sizeof", "vuln_type": "integer_overflow", "confidence": "possible", "description": "calloc(n, sizeof) — verify n is validated before call"}
+  ],
+  "use_after_free": [
+    {"id": "c-uaf-001", "regex": "free\\s*\\(\\s*(\\w+)\\s*\\).*\\1\\s*=(?!=)", "vuln_type": "use_after_free", "confidence": "possible", "description": "Variable used after free — verify pointer is set to NULL after free()"},
+    {"id": "c-uaf-002", "regex": "free\\s*\\(\\s*\\w+\\s*\\)[^;]*;[^;]*free\\s*\\(\\s*\\w+\\s*\\)", "vuln_type": "use_after_free", "confidence": "possible", "description": "Multiple free() calls close together — check for double-free"},
+    {"id": "c-uaf-003", "regex": "free\\s*\\([^)]+\\)\\s*;(?!\\s*\\w+\\s*=\\s*NULL)", "vuln_type": "use_after_free", "confidence": "possible", "description": "free() not followed by NULL assignment — dangling pointer risk"}
+  ],
+  "null_pointer": [
+    {"id": "c-null-001", "regex": "malloc\\s*\\([^)]+\\)\\s*;(?!\\s*if)", "vuln_type": "null_pointer", "confidence": "possible", "description": "malloc() return value not checked for NULL before use"},
+    {"id": "c-null-002", "regex": "realloc\\s*\\([^)]+\\)\\s*;(?!\\s*if)", "vuln_type": "null_pointer", "confidence": "possible", "description": "realloc() return value not checked — on failure returns NULL, original pointer lost"},
+    {"id": "c-null-003", "regex": "fopen\\s*\\([^)]+\\)\\s*;(?!\\s*if)", "vuln_type": "null_pointer", "confidence": "possible", "description": "fopen() return value not checked for NULL"}
+  ],
+  "race_condition": [
+    {"id": "c-toctou-001", "regex": "access\\s*\\([^)]+\\).*open\\s*\\(", "vuln_type": "toctou", "confidence": "possible", "description": "TOCTOU: access() check then open() — race condition window"},
+    {"id": "c-toctou-002", "regex": "stat\\s*\\([^)]+\\).*open\\s*\\(", "vuln_type": "toctou", "confidence": "possible", "description": "TOCTOU: stat() check then open() — race condition window"},
+    {"id": "c-toctou-003", "regex": "\\btmpnam\\s*\\(|\\btempnam\\s*\\(", "vuln_type": "toctou", "confidence": "confirmed", "description": "tmpnam()/tempnam() — TOCTOU race. Use mkstemp() instead"}
+  ],
+  "dangerous_functions": [
+    {"id": "c-danger-001", "regex": "\\bsystem\\s*\\(", "vuln_type": "cmdi", "confidence": "possible", "description": "system() — verify argument is not user-controlled. Prefer execv() family"},
+    {"id": "c-danger-002", "regex": "\\bpopen\\s*\\(", "vuln_type": "cmdi", "confidence": "possible", "description": "popen() — shell injection if argument contains user input"},
+    {"id": "c-danger-003", "regex": "\\bexecl\\s*\\(|\\bexecle\\s*\\(|\\bexeclp\\s*\\(", "vuln_type": "cmdi", "confidence": "possible", "description": "exec() with shell — verify arguments are not user-controlled"},
+    {"id": "c-danger-004", "regex": "\\bsetuid\\s*\\(0\\)|\\bsetgid\\s*\\(0\\)", "vuln_type": "privilege_escalation", "confidence": "possible", "description": "Dropping to root UID/GID — verify this is intentional"},
+    {"id": "c-danger-005", "regex": "\\bchmod\\s*\\([^,]+,\\s*0777\\)", "vuln_type": "config", "confidence": "possible", "description": "chmod 0777 — world-writable file permission"},
+    {"id": "c-danger-006", "regex": "\\bcrypt\\s*\\([^,]+,\\s*[\"'][^$]", "vuln_type": "weak_crypto", "confidence": "possible", "description": "crypt() with non-modern hash prefix — verify using $6$ (SHA-512) or stronger"}
+  ]
+}

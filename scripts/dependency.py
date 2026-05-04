@@ -6,7 +6,8 @@ Usage:
   python3 scripts/dependency.py --path <dir> [--output <file>]
 
 Checks: requirements.txt, Pipfile, pyproject.toml, package.json, pom.xml,
-        build.gradle, go.mod, Gemfile, composer.json, Cargo.toml
+        build.gradle, build.gradle.kts, go.mod, Gemfile.lock, composer.json,
+        Cargo.toml, .csproj, packages.config
 """
 
 import argparse
@@ -84,6 +85,19 @@ KNOWN_VULNS = {
         ("guzzlehttp/guzzle", "<7.5.0", ">=7.5.0", "CVE-2022-31090", 7.5, "ssrf", "SSRF via URL parsing"),
         ("symfony/http-foundation", "<6.3.1", ">=6.3.1", "CVE-2023-25575", 7.5, "dos", "ReDoS in header parsing"),
         ("phpoffice/phpspreadsheet", "<1.29.0", ">=1.29.0", "CVE-2024-25118", 8.8, "xxe", "XXE via XLSX files"),
+    ],
+    "rust": [
+        ("openssl", "<0.10.55", ">=0.10.55", "CVE-2023-0286", 7.4, "dos", "X.400 GeneralName OOB read"),
+        ("h2", "<0.3.17", ">=0.3.17", "CVE-2023-26964", 7.5, "dos", "HTTP/2 header resource exhaustion"),
+        ("rustls", "<0.20.9|<0.21.7", ">=0.21.7", "CVE-2023-36619", 7.5, "tls", "Incorrect TLS handshake handling"),
+        ("hyper", "<0.14.27", ">=0.14.27", "CVE-2023-44487", 7.5, "dos", "HTTP/2 rapid reset attack"),
+        ("tokio", "<1.29.1", ">=1.29.1", "CVE-2023-22466", 5.3, "dos", "Thread count manipulation"),
+    ],
+    "dotnet": [
+        ("Microsoft.AspNetCore.App", "<7.0.14|<8.0.0", ">=8.0.0", "CVE-2023-44487", 7.5, "dos", "HTTP/2 rapid reset attack"),
+        ("System.Text.Json", "<7.0.4", ">=8.0.0", "CVE-2023-21173", 7.5, "dos", "DoS via large JSON"),
+        ("Microsoft.Data.SqlClient", "<5.1.2", ">=5.1.2", "CVE-2024-0056", 8.7, "mitm", "SQL connection string injection"),
+        ("Newtonsoft.Json", "<13.0.1", ">=13.0.3", "CVE-2024-21907", 7.5, "dos", "DoS via deep nesting ReDoS"),
     ],
 }
 
@@ -201,16 +215,124 @@ def parse_composer_json(path: Path) -> list:
     return deps
 
 
+def parse_cargo_toml(path: Path) -> list:
+    """Parse Cargo.toml [dependencies] and [dev-dependencies] sections."""
+    deps = []
+    content = path.read_text(errors="replace")
+    in_deps = False
+    section = ""
+    for line in content.splitlines():
+        line_s = line.strip()
+        if re.match(r'^\[(dev-dependencies|build-dependencies|dependencies)\]', line_s):
+            in_deps = True
+            section = line_s
+            continue
+        if line_s.startswith("[") and in_deps:
+            in_deps = False
+            continue
+        if not in_deps:
+            continue
+        # name = "1.2.3"  or  name = { version = "1.2.3" }
+        m = re.match(r'^([\w\-]+)\s*=\s*["\']([^"\']+)["\']', line_s)
+        if m:
+            deps.append({"name": m.group(1).lower(), "version": re.sub(r"[^0-9.]", "", m.group(2)), "source": str(path)})
+            continue
+        m = re.match(r'^([\w\-]+)\s*=\s*\{[^}]*version\s*=\s*["\']([^"\']+)["\']', line_s)
+        if m:
+            deps.append({"name": m.group(1).lower(), "version": re.sub(r"[^0-9.]", "", m.group(2)), "source": str(path)})
+    return [d for d in deps if d["version"]]
+
+
+def parse_csproj(path: Path) -> list:
+    """Parse .csproj PackageReference elements."""
+    content = path.read_text(errors="replace")
+    deps = []
+    for m in re.finditer(
+        r'<PackageReference\s+Include="([^"]+)"\s+Version="([^"]+)"',
+        content, re.IGNORECASE
+    ):
+        ver = re.sub(r"[^0-9.]", "", m.group(2))
+        if ver:
+            deps.append({"name": m.group(1).lower(), "version": ver, "source": str(path)})
+    # Also handle multi-line form
+    for m in re.finditer(
+        r'<PackageReference\s+Include="([^"]+)"[^>]*>.*?<Version>([^<]+)</Version>',
+        content, re.IGNORECASE | re.DOTALL
+    ):
+        ver = re.sub(r"[^0-9.]", "", m.group(2).strip())
+        if ver:
+            deps.append({"name": m.group(1).lower(), "version": ver, "source": str(path)})
+    return deps
+
+
+def parse_packages_config(path: Path) -> list:
+    """Parse packages.config (NuGet legacy format)."""
+    content = path.read_text(errors="replace")
+    deps = []
+    for m in re.finditer(r'<package\s+id="([^"]+)"\s+version="([^"]+)"', content, re.IGNORECASE):
+        ver = re.sub(r"[^0-9.]", "", m.group(2))
+        if ver:
+            deps.append({"name": m.group(1).lower(), "version": ver, "source": str(path)})
+    return deps
+
+
+def parse_build_gradle(path: Path) -> list:
+    """Parse build.gradle / build.gradle.kts dependency blocks."""
+    content = path.read_text(errors="replace")
+    deps = []
+    # Groovy: implementation 'group:artifact:version' or "group:artifact:version"
+    for m in re.finditer(r"""(?:implementation|api|compile|testImplementation|runtimeOnly)\s+['"]([^'"]+):([^'"]+):([^'"]+)['"]""", content):
+        ver = re.sub(r"[^0-9.]", "", m.group(3))
+        if ver:
+            deps.append({"name": m.group(2).lower(), "version": ver, "source": str(path)})
+    # Kotlin DSL: implementation("group:artifact:version")
+    for m in re.finditer(r"""(?:implementation|api|testImplementation)\s*\(\s*["']([^"']+):([^"']+):([^"']+)["']\s*\)""", content):
+        ver = re.sub(r"[^0-9.]", "", m.group(3))
+        if ver:
+            deps.append({"name": m.group(2).lower(), "version": ver, "source": str(path)})
+    return deps
+
+
+def parse_pyproject_toml(path: Path) -> list:
+    """Parse pyproject.toml [project.dependencies] and [tool.poetry.dependencies]."""
+    content = path.read_text(errors="replace")
+    deps = []
+    in_section = False
+    for line in content.splitlines():
+        line_s = line.strip()
+        if re.match(r'^\[project\.dependencies\]|\[tool\.poetry\.dependencies\]', line_s):
+            in_section = True
+            continue
+        if line_s.startswith("[") and in_section:
+            in_section = False
+            continue
+        if not in_section:
+            # Also parse PEP 508 inline list: dependencies = ["requests>=2.0", ...]
+            m = re.search(r'"([\w\-\.]+)\s*(?:>=|==|~=|<=|!=|>|<)\s*([\d\.]+)', line_s)
+            if m:
+                deps.append({"name": m.group(1).lower(), "version": m.group(2), "source": str(path)})
+            continue
+        # name = ">=1.2.3"  (poetry format)
+        m = re.match(r'^([\w\-\.]+)\s*=\s*["\'](?:[\^~>=<]*)([\d\.]+)', line_s)
+        if m:
+            deps.append({"name": m.group(1).lower(), "version": m.group(2), "source": str(path)})
+    return [d for d in deps if d["version"]]
+
+
 PARSERS = {
     "requirements.txt": ("python", parse_requirements_txt),
     "requirements-dev.txt": ("python", parse_requirements_txt),
     "requirements-prod.txt": ("python", parse_requirements_txt),
+    "pyproject.toml": ("python", parse_pyproject_toml),
     "package.json": ("javascript", parse_package_json),
     "pom.xml": ("java", parse_pom_xml),
-    "build.gradle": ("java", lambda p: []),
+    "build.gradle": ("java", parse_build_gradle),
+    "build.gradle.kts": ("java", parse_build_gradle),
     "go.mod": ("go", parse_go_mod),
     "gemfile.lock": ("ruby", parse_gemfile_lock),
     "composer.json": ("php", parse_composer_json),
+    "cargo.toml": ("rust", parse_cargo_toml),
+    "packages.config": ("dotnet", parse_packages_config),
 }
 
 
@@ -222,9 +344,13 @@ def check_dependencies(base_path: Path) -> dict:
     manifests = get_manifest_files(base_path)
     for manifest in manifests:
         name_lower = manifest.name.lower()
-        if name_lower not in PARSERS:
+        # Handle variable-name manifests (.csproj)
+        if name_lower.endswith(".csproj"):
+            ecosystem, parser = "dotnet", parse_csproj
+        elif name_lower not in PARSERS:
             continue
-        ecosystem, parser = PARSERS[name_lower]
+        else:
+            ecosystem, parser = PARSERS[name_lower]
         deps = parser(manifest)
         manifests_found.append({"file": str(manifest.relative_to(base_path)), "ecosystem": ecosystem, "deps": len(deps)})
         all_deps.extend([(ecosystem, d) for d in deps])

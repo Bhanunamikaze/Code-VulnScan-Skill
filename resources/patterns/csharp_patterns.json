@@ -1,0 +1,59 @@
+{
+  "sqli": [
+    {"id": "cs-sqli-001", "regex": "new\\s+SqlCommand\\s*\\([^)]*\\+\\s*\\w", "vuln_type": "sqli", "confidence": "likely", "description": "SqlCommand with string concatenation — SQL injection"},
+    {"id": "cs-sqli-002", "regex": "new\\s+SqlCommand\\s*\\(\\s*\\$[\"']", "vuln_type": "sqli", "confidence": "likely", "description": "SqlCommand with C# interpolated string — SQL injection"},
+    {"id": "cs-sqli-003", "regex": "string\\.Format\\s*\\([^)]*SELECT|INSERT|UPDATE|DELETE[^)]*\\{0\\}", "vuln_type": "sqli", "confidence": "likely", "description": "SQL query built with string.Format"},
+    {"id": "cs-sqli-004", "regex": "ExecuteNonQuery\\s*\\(|ExecuteReader\\s*\\(|ExecuteScalar\\s*\\(", "vuln_type": "sqli", "confidence": "possible", "description": "SQL execution method — verify command is parameterised"},
+    {"id": "cs-sqli-005", "regex": "FromSqlRaw\\s*\\(\\s*\\$", "vuln_type": "sqli", "confidence": "likely", "description": "EF Core FromSqlRaw() with interpolated string — SQL injection. Use FromSqlInterpolated()"},
+    {"id": "cs-sqli-006", "regex": "Database\\.ExecuteSqlRaw\\s*\\(\\s*\\$", "vuln_type": "sqli", "confidence": "likely", "description": "EF Core ExecuteSqlRaw() with interpolated string"},
+    {"id": "cs-sqli-007", "regex": "new\\s+OleDbCommand\\s*\\([^)]*\\+\\s*\\w", "vuln_type": "sqli", "confidence": "likely", "description": "OleDbCommand with string concatenation — SQL injection"},
+    {"id": "cs-sqli-008", "regex": "new\\s+NpgsqlCommand\\s*\\([^)]*\\+\\s*\\w", "vuln_type": "sqli", "confidence": "likely", "description": "Npgsql command with string concatenation"}
+  ],
+  "cmdi": [
+    {"id": "cs-cmdi-001", "regex": "Process\\.Start\\s*\\([^)]*Request\\.", "vuln_type": "cmdi", "confidence": "likely", "description": "Process.Start with request data — command injection"},
+    {"id": "cs-cmdi-002", "regex": "new\\s+ProcessStartInfo\\s*\\([^)]*Request\\.", "vuln_type": "cmdi", "confidence": "likely", "description": "ProcessStartInfo with request data — command injection"},
+    {"id": "cs-cmdi-003", "regex": "Process\\.Start\\s*\\([^)]*\\+\\s*\\w", "vuln_type": "cmdi", "confidence": "possible", "description": "Process.Start with concatenated argument — verify it is not user-controlled"},
+    {"id": "cs-cmdi-004", "regex": "UseShellExecute\\s*=\\s*true", "vuln_type": "cmdi", "confidence": "possible", "description": "UseShellExecute=true enables shell features — verify Arguments are sanitised"},
+    {"id": "cs-cmdi-005", "regex": "cmd\\.exe|powershell\\.exe|/bin/sh|/bin/bash", "vuln_type": "cmdi", "confidence": "possible", "description": "Hardcoded shell executable in Process.Start context — verify arguments"}
+  ],
+  "path_traversal": [
+    {"id": "cs-pt-001", "regex": "File\\.(ReadAllText|ReadAllBytes|WriteAllText|Delete|Open)\\s*\\([^)]*Request\\.", "vuln_type": "path_traversal", "confidence": "likely", "description": "File operation with request data — path traversal"},
+    {"id": "cs-pt-002", "regex": "Path\\.Combine\\s*\\([^)]*Request\\.", "vuln_type": "path_traversal", "confidence": "likely", "description": "Path.Combine with request data — verify no traversal sequences"},
+    {"id": "cs-pt-003", "regex": "new\\s+FileStream\\s*\\([^)]*Request\\.", "vuln_type": "path_traversal", "confidence": "likely", "description": "FileStream with request data — path traversal"},
+    {"id": "cs-pt-004", "regex": "Directory\\.(GetFiles|EnumerateFiles|CreateDirectory)\\s*\\([^)]*Request\\.", "vuln_type": "path_traversal", "confidence": "likely", "description": "Directory operation with request data"},
+    {"id": "cs-pt-005", "regex": "PhysicalFile\\s*\\([^)]*Request\\.", "vuln_type": "path_traversal", "confidence": "likely", "description": "ASP.NET Core PhysicalFile with request data"}
+  ],
+  "xxe": [
+    {"id": "cs-xxe-001", "regex": "new\\s+XmlDocument\\s*\\(\\s*\\)", "vuln_type": "xxe", "confidence": "possible", "description": "XmlDocument — ensure XmlResolver is null or set XmlReaderSettings.DtdProcessing=Prohibit"},
+    {"id": "cs-xxe-002", "regex": "XmlReader\\.Create\\s*\\([^)]*(?!DtdProcessing)", "vuln_type": "xxe", "confidence": "possible", "description": "XmlReader.Create without DtdProcessing=Prohibit — potential XXE"},
+    {"id": "cs-xxe-003", "regex": "new\\s+XPathDocument\\s*\\(", "vuln_type": "xxe", "confidence": "possible", "description": "XPathDocument — verify XmlReader settings prohibit DTD"},
+    {"id": "cs-xxe-004", "regex": "XDocument\\.Load\\s*\\(|XElement\\.Load\\s*\\(", "vuln_type": "xxe", "confidence": "possible", "description": "LINQ-to-XML Load() — defaults allow DTD, set LoadOptions.None and use XmlReader"},
+    {"id": "cs-xxe-005", "regex": "DtdProcessing\\.Parse", "vuln_type": "xxe", "confidence": "confirmed", "description": "DtdProcessing.Parse explicitly enables DTD — XXE risk"}
+  ],
+  "deserialization": [
+    {"id": "cs-deser-001", "regex": "BinaryFormatter\\s*\\(\\s*\\)\\.Deserialize\\s*\\(", "vuln_type": "deserialization", "confidence": "confirmed", "description": "BinaryFormatter.Deserialize — arbitrary code execution. Use System.Text.Json instead"},
+    {"id": "cs-deser-002", "regex": "JavaScriptSerializer\\s*\\(\\s*\\)\\.Deserialize\\s*\\(", "vuln_type": "deserialization", "confidence": "possible", "description": "JavaScriptSerializer — potential type confusion. Prefer System.Text.Json"},
+    {"id": "cs-deser-003", "regex": "TypeNameHandling\\s*=\\s*TypeNameHandling\\.(?!None)", "vuln_type": "deserialization", "confidence": "confirmed", "description": "Newtonsoft.Json TypeNameHandling != None — polymorphic deserialization, RCE risk"},
+    {"id": "cs-deser-004", "regex": "new\\s+DataContractSerializer\\s*\\([^)]*type", "vuln_type": "deserialization", "confidence": "possible", "description": "DataContractSerializer with variable type — verify type is not user-controlled"},
+    {"id": "cs-deser-005", "regex": "SoapFormatter\\s*\\(\\s*\\)\\.Deserialize\\s*\\(", "vuln_type": "deserialization", "confidence": "confirmed", "description": "SoapFormatter — obsolete and unsafe, allows arbitrary object instantiation"}
+  ],
+  "crypto": [
+    {"id": "cs-crypto-001", "regex": "new\\s+MD5CryptoServiceProvider\\s*\\(\\s*\\)", "vuln_type": "weak_crypto", "confidence": "possible", "description": "MD5CryptoServiceProvider — insecure hash, use SHA-256 or SHA-512"},
+    {"id": "cs-crypto-002", "regex": "new\\s+SHA1CryptoServiceProvider\\s*\\(\\s*\\)", "vuln_type": "weak_crypto", "confidence": "possible", "description": "SHA1CryptoServiceProvider — insecure hash, use SHA-256 or SHA-512"},
+    {"id": "cs-crypto-003", "regex": "new\\s+DESCryptoServiceProvider\\s*\\(\\s*\\)", "vuln_type": "weak_crypto", "confidence": "confirmed", "description": "DES cipher — insecure, use AES-256-GCM"},
+    {"id": "cs-crypto-004", "regex": "new\\s+RC2CryptoServiceProvider\\s*\\(\\s*\\)", "vuln_type": "weak_crypto", "confidence": "confirmed", "description": "RC2 cipher — insecure, use AES-256-GCM"},
+    {"id": "cs-crypto-005", "regex": "CipherMode\\.ECB", "vuln_type": "weak_crypto", "confidence": "confirmed", "description": "AES ECB mode — deterministic, leaks patterns"},
+    {"id": "cs-crypto-006", "regex": "new\\s+Random\\s*\\(\\s*\\)", "vuln_type": "insecure_random", "confidence": "possible", "description": "System.Random — not cryptographically secure. Use RNGCryptoServiceProvider or RandomNumberGenerator"},
+    {"id": "cs-crypto-007", "regex": "ServicePointManager\\.ServerCertificateValidationCallback\\s*=", "vuln_type": "tls_bypass", "confidence": "possible", "description": "ServerCertificateValidationCallback override — verify it doesn't blindly return true"},
+    {"id": "cs-crypto-008", "regex": "new\\s+RijndaelManaged\\s*\\(\\s*\\)", "vuln_type": "weak_crypto", "confidence": "possible", "description": "RijndaelManaged allows insecure block sizes — use AesManaged or Aes.Create()"}
+  ],
+  "ssrf": [
+    {"id": "cs-ssrf-001", "regex": "new\\s+HttpClient\\s*\\(\\s*\\).*GetAsync\\s*\\([^)]*Request\\.", "vuln_type": "ssrf", "confidence": "likely", "description": "HttpClient.GetAsync with request data — SSRF"},
+    {"id": "cs-ssrf-002", "regex": "WebRequest\\.Create\\s*\\([^)]*Request\\.", "vuln_type": "ssrf", "confidence": "likely", "description": "WebRequest.Create with user-supplied URL — SSRF"},
+    {"id": "cs-ssrf-003", "regex": "new\\s+WebClient\\s*\\(\\s*\\)\\.DownloadString\\s*\\([^)]*Request\\.", "vuln_type": "ssrf", "confidence": "likely", "description": "WebClient.DownloadString with user-supplied URL — SSRF"}
+  ],
+  "open_redirect": [
+    {"id": "cs-or-001", "regex": "Response\\.Redirect\\s*\\([^)]*Request\\.", "vuln_type": "open_redirect", "confidence": "likely", "description": "Response.Redirect with request data — open redirect"},
+    {"id": "cs-or-002", "regex": "Redirect\\s*\\([^)]*Request\\.", "vuln_type": "open_redirect", "confidence": "likely", "description": "MVC Redirect() with request data — open redirect. Use LocalRedirect()"}
+  ]
+}

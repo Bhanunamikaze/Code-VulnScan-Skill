@@ -1,0 +1,47 @@
+{
+  "memory_safety": [
+    {"id": "rs-unsafe-001", "regex": "unsafe\\s*\\{", "vuln_type": "unsafe_code", "confidence": "possible", "description": "unsafe block — review for memory safety violations (raw pointer deref, unchecked indexing, FFI)"},
+    {"id": "rs-unsafe-002", "regex": "\\*\\s*(mut\\s+)?\\w+\\s*(?:as|=|;|\\))", "vuln_type": "raw_pointer_deref", "confidence": "possible", "description": "Raw pointer dereference — verify pointer is valid and not dangling (only flagged in unsafe context)"},
+    {"id": "rs-unsafe-003", "regex": "slice::from_raw_parts\\s*\\(", "vuln_type": "memory_safety", "confidence": "likely", "description": "slice::from_raw_parts — verify ptr is valid, aligned, and len is within allocation"},
+    {"id": "rs-unsafe-004", "regex": "slice::from_raw_parts_mut\\s*\\(", "vuln_type": "memory_safety", "confidence": "likely", "description": "slice::from_raw_parts_mut — verify no aliasing mutable references exist"},
+    {"id": "rs-unsafe-005", "regex": "mem::transmute\\s*::<", "vuln_type": "memory_safety", "confidence": "likely", "description": "mem::transmute — arbitrary bitcast; verify types have identical layout and validity"},
+    {"id": "rs-unsafe-006", "regex": "mem::transmute\\s*\\(", "vuln_type": "memory_safety", "confidence": "likely", "description": "mem::transmute() — verify source and target types have same size and valid bit patterns"},
+    {"id": "rs-unsafe-007", "regex": "ptr::read\\s*\\(|ptr::write\\s*\\(", "vuln_type": "memory_safety", "confidence": "possible", "description": "ptr::read/write — verify pointer is properly aligned and points to valid memory"},
+    {"id": "rs-unsafe-008", "regex": "ptr::copy\\s*\\(|ptr::copy_nonoverlapping\\s*\\(", "vuln_type": "memory_safety", "confidence": "possible", "description": "ptr::copy — verify src and dst are valid, non-overlapping (for copy_nonoverlapping), and len is correct"},
+    {"id": "rs-unsafe-009", "regex": "Box::from_raw\\s*\\(", "vuln_type": "memory_safety", "confidence": "likely", "description": "Box::from_raw — takes ownership of raw pointer; double-free if called more than once on same pointer"},
+    {"id": "rs-unsafe-010", "regex": "Arc::from_raw\\s*\\(|Rc::from_raw\\s*\\(", "vuln_type": "memory_safety", "confidence": "likely", "description": "Arc/Rc::from_raw — verify pointer came from Arc/Rc::into_raw to avoid refcount corruption"}
+  ],
+  "ffi": [
+    {"id": "rs-ffi-001", "regex": "extern\\s+[\"']C[\"']\\s*\\{", "vuln_type": "ffi", "confidence": "possible", "description": "C FFI block — all functions inside are unsafe; verify argument types and lifetimes"},
+    {"id": "rs-ffi-002", "regex": "CStr::from_ptr\\s*\\(", "vuln_type": "ffi", "confidence": "possible", "description": "CStr::from_ptr — verify pointer is non-null, points to valid null-terminated C string, and outlives CStr"},
+    {"id": "rs-ffi-003", "regex": "CString::from_raw\\s*\\(", "vuln_type": "ffi", "confidence": "likely", "description": "CString::from_raw — retakes ownership; double-free if called on non-CString allocation"},
+    {"id": "rs-ffi-004", "regex": "std::ffi::OsStr::from_bytes_unchecked\\s*\\(", "vuln_type": "ffi", "confidence": "possible", "description": "from_bytes_unchecked — skips UTF-8 validation; verify bytes are valid platform string"}
+  ],
+  "integer_safety": [
+    {"id": "rs-int-001", "regex": "\\.unwrap\\s*\\(\\s*\\)", "vuln_type": "panic", "confidence": "possible", "description": "unwrap() panics on None/Err — use expect() with message or proper error handling in production"},
+    {"id": "rs-int-002", "regex": "\\.expect\\s*\\(", "vuln_type": "panic", "confidence": "possible", "description": "expect() panics — acceptable in tests/examples but verify not reachable in production code paths"},
+    {"id": "rs-int-003", "regex": "as\\s+usize|as\\s+u8|as\\s+u16|as\\s+u32", "vuln_type": "integer_truncation", "confidence": "possible", "description": "Numeric cast with 'as' — truncates silently; use TryFrom/TryInto for checked conversion"},
+    {"id": "rs-int-004", "regex": "get_unchecked\\s*\\(|get_unchecked_mut\\s*\\(", "vuln_type": "bounds_check_bypass", "confidence": "likely", "description": "Unchecked slice indexing — UB if index is out of bounds. Use get() instead"}
+  ],
+  "crypto": [
+    {"id": "rs-crypto-001", "regex": "use\\s+md5::|extern\\s+crate\\s+md5\\b", "vuln_type": "weak_crypto", "confidence": "possible", "description": "MD5 crate — insecure for security-sensitive hashing"},
+    {"id": "rs-crypto-002", "regex": "use\\s+sha1::|extern\\s+crate\\s+sha1\\b", "vuln_type": "weak_crypto", "confidence": "possible", "description": "SHA1 crate — insecure for security-sensitive hashing"},
+    {"id": "rs-crypto-003", "regex": "rand::thread_rng\\s*\\(\\s*\\)", "vuln_type": "insecure_random", "confidence": "possible", "description": "thread_rng — not CSPRNG. Use OsRng or rand::rngs::OsRng for security tokens"},
+    {"id": "rs-crypto-004", "regex": "StdRng|SmallRng|Lcg|Pcg", "vuln_type": "insecure_random", "confidence": "possible", "description": "Non-cryptographic RNG — do not use for security-sensitive values"},
+    {"id": "rs-crypto-005", "regex": "aes::Aes.*Ecb|ecb::Ecb<", "vuln_type": "weak_crypto", "confidence": "confirmed", "description": "AES-ECB mode — deterministic, leaks patterns. Use AES-GCM or ChaCha20-Poly1305"}
+  ],
+  "ssrf": [
+    {"id": "rs-ssrf-001", "regex": "reqwest::get\\s*\\([^)]*query\\|params\\|input", "vuln_type": "ssrf", "confidence": "possible", "description": "reqwest::get with potential user-supplied URL — SSRF"},
+    {"id": "rs-ssrf-002", "regex": "Client::new\\s*\\(\\s*\\)\\.get\\s*\\(\\s*\\w+\\s*\\)", "vuln_type": "ssrf", "confidence": "possible", "description": "HTTP client GET with variable URL — verify URL is not user-controlled"},
+    {"id": "rs-ssrf-003", "regex": "hyper::Uri::from_str\\s*\\(\\s*\\w+\\s*\\)", "vuln_type": "ssrf", "confidence": "possible", "description": "Hyper URI from variable string — verify not user-controlled"}
+  ],
+  "sql_injection": [
+    {"id": "rs-sqli-001", "regex": "format!\\s*\\([^)]*SELECT|INSERT|UPDATE|DELETE[^)]*\\{\\}", "vuln_type": "sqli", "confidence": "likely", "description": "SQL query built with format! macro — SQL injection. Use parameterised queries"},
+    {"id": "rs-sqli-002", "regex": "\\.query\\s*\\(&?format!\\s*\\(", "vuln_type": "sqli", "confidence": "likely", "description": "Database query with format! string — SQL injection. Use query_as! or bind parameters"},
+    {"id": "rs-sqli-003", "regex": "sqlx::query\\s*\\(\\s*&?format!", "vuln_type": "sqli", "confidence": "likely", "description": "sqlx::query with format! — SQL injection. Use sqlx::query! macro with bound parameters"}
+  ],
+  "path_traversal": [
+    {"id": "rs-pt-001", "regex": "Path::new\\s*\\(\\s*\\w+\\s*\\)\\.join\\s*\\(", "vuln_type": "path_traversal", "confidence": "possible", "description": "Path::new from variable then join — verify no traversal sequences before canonicalize()"},
+    {"id": "rs-pt-002", "regex": "fs::read\\s*\\(|fs::write\\s*\\(|File::open\\s*\\(", "vuln_type": "path_traversal", "confidence": "possible", "description": "File operation — verify path is validated and restricted to expected directory"}
+  ]
+}

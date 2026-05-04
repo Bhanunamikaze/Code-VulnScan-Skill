@@ -27,14 +27,16 @@ Python, JavaScript/TypeScript, Java/Kotlin, Go, PHP, Ruby, C/C++, C#, Rust, Swif
 
 ## IDE Compatibility
 
-| IDE | Install Path |
-|-----|-------------|
-| Claude Code (CLI/Desktop) | `~/.claude/skills/code-vulnscan` |
-| OpenAI Codex | `~/.codex/skills/code-vulnscan` |
-| Cursor AI | `<project>/.cursor/skills/code-vulnscan` |
-| Windsurf | `<project>/.windsurf/skills/code-vulnscan` |
-| Continue.dev | `<project>/.continue/skills/code-vulnscan` |
-| Antigravity | `<project>/.agent/skills/code-vulnscan` |
+| IDE | Target flag | Install Path |
+|-----|-------------|-------------|
+| Claude Code (CLI/Desktop) | `--target claude` | `~/.claude/skills/code-vulnscan` |
+| OpenAI Codex | `--target codex` | `~/.codex/skills/code-vulnscan` |
+| Cursor AI | `--target cursor` | `<project>/.cursor/skills/code-vulnscan` |
+| Windsurf | `--target windsurf` | `<project>/.windsurf/skills/code-vulnscan` |
+| GitHub Copilot Chat | `--target copilot` | `<project>/.github/copilot-instructions.md` |
+| Cline (VS Code) | `--target cline` | `<project>/.cline/skills/code-vulnscan` + `.clinerules` |
+| Continue.dev | `--target continue` | `<project>/.continue/skills/code-vulnscan` |
+| Antigravity | `--target antigravity` | `<project>/.agent/skills/code-vulnscan` |
 
 ## Installation
 
@@ -48,13 +50,25 @@ bash install.sh --target claude
 # Codex
 bash install.sh --target codex
 
+# GitHub Copilot Chat (writes .github/copilot-instructions.md)
+bash install.sh --target copilot --project-dir /path/to/your/project
+
+# Cursor AI
+bash install.sh --target cursor --project-dir /path/to/your/project
+
+# Windsurf
+bash install.sh --target windsurf --project-dir /path/to/your/project
+
+# Cline (VS Code extension)
+bash install.sh --target cline --project-dir /path/to/your/project
+
 # User-wide (Claude + Codex)
 bash install.sh --target global
 
-# All project-local IDEs (Cursor, Windsurf, Continue, Antigravity)
+# All project-local IDEs (Cursor, Windsurf, Copilot, Cline, Continue, Antigravity)
 bash install.sh --target project --project-dir /path/to/your/project
 
-# All targets
+# Every target at once
 bash install.sh --target all --project-dir /path/to/your/project
 
 # With Python deps for local scripts

@@ -17,8 +17,67 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from scripts.utils.db import initialize_database, create_run, insert_finding, list_runs, get_findings, get_latest_run, update_finding_status
 from scripts.utils.files import enumerate_files, read_file, get_snippet, count_by_language
-from scripts.utils.languages import detect_language, detect_frameworks
+from scripts.utils.languages import detect_language, detect_frameworks, SKIP_DIRS
 from scripts.utils.patterns import scan_file_for_candidates
+
+IAC_GLOBS = [
+    "Dockerfile",
+    "dockerfile",
+    "*.dockerfile",
+    "*.tf",
+    "*.tfvars",
+    ".github/workflows/*.yml",
+    ".github/workflows/*.yaml",
+    ".gitlab-ci.yml",
+    "*.gitlab-ci.yml",
+    "docker-compose.yml",
+    "docker-compose.yaml",
+    "docker-compose*.yml",
+    "k8s/**/*.yml",
+    "k8s/**/*.yaml",
+    "kubernetes/**/*.yml",
+    "manifests/**/*.yml",
+    "helm/**/*.yaml",
+    "charts/**/*.yaml",
+]
+
+
+def enumerate_iac_files(base_path: Path) -> list:
+    """Enumerate IaC files (Dockerfile, Terraform, GitHub Actions, K8s, etc.)."""
+    iac_files = []
+    iac_names = {"dockerfile", ".dockerignore"}
+    iac_extensions = {".tf", ".tfvars"}
+    workflow_parents = {".github/workflows", ".gitlab-ci"}
+
+    for p in base_path.rglob("*"):
+        if not p.is_file():
+            continue
+        # Skip ignored dirs
+        if any(part in SKIP_DIRS for part in p.parts):
+            continue
+        name_lower = p.name.lower()
+        ext = p.suffix.lower()
+        lang = None
+
+        if name_lower == "dockerfile" or name_lower.endswith(".dockerfile"):
+            lang = "dockerfile"
+        elif ext in iac_extensions:
+            lang = "terraform"
+        elif ext in (".yml", ".yaml"):
+            # GitHub Actions
+            rel = str(p.relative_to(base_path)).replace("\\", "/")
+            if ".github/workflows" in rel:
+                lang = "github_actions"
+            elif ".gitlab-ci" in rel or name_lower.endswith(".gitlab-ci.yml"):
+                lang = "gitlab_ci"
+            elif name_lower.startswith("docker-compose"):
+                lang = "docker_compose"
+            elif any(part in ("k8s", "kubernetes", "manifests", "helm", "charts") for part in p.parts):
+                lang = "kubernetes"
+        if lang:
+            iac_files.append({"path": p, "language": lang, "size": p.stat().st_size})
+
+    return iac_files
 
 
 def cmd_status(conn):
@@ -52,6 +111,20 @@ def cmd_scan(conn, args):
     include_langs = [l.strip() for l in args.lang.split(",")] if args.lang else None
     exclude_dirs = [d.strip() for d in args.exclude.split(",")] if args.exclude else None
 
+    # --resume: reuse latest run, skip already-scanned files
+    resumed_run_id = None
+    scanned_paths = set()
+    if getattr(args, "resume", False):
+        latest = get_latest_run(conn)
+        if latest and latest["status"] in ("pending_review", "in_progress"):
+            resumed_run_id = latest["id"]
+            existing = get_findings(conn, run_id=resumed_run_id)
+            scanned_paths = {f["file_path"] for f in existing}
+            print(f"\nCode-VulnScan — Resuming run {resumed_run_id}: {target}")
+            print(f"  Skipping {len(scanned_paths)} already-scanned files")
+        else:
+            print("No resumable run found — starting fresh.")
+
     print(f"\nCode-VulnScan — Enumerating: {target}")
 
     files = enumerate_files(
@@ -62,8 +135,18 @@ def cmd_scan(conn, args):
         include_config=True,
     )
 
+    # IaC-specific pass — enumerate Dockerfiles, Terraform, GitHub Actions, K8s manifests
+    iac_files = enumerate_iac_files(target)
+    # Merge without duplicates
+    existing_paths = {f["path"] for f in files}
+    for iac in iac_files:
+        if iac["path"] not in existing_paths:
+            files.append(iac)
+            existing_paths.add(iac["path"])
+
     lang_counts = count_by_language(files)
-    print(f"Files found: {len(files)}")
+    iac_count = len(iac_files)
+    print(f"Files found: {len(files)} ({iac_count} IaC files)")
     print("Languages:  " + ", ".join(f"{k}({v})" for k, v in lang_counts.items()))
 
     # Detect frameworks from high-priority files
@@ -77,9 +160,14 @@ def cmd_scan(conn, args):
     if frameworks_seen:
         print("Frameworks: " + ", ".join(frameworks_seen.keys()))
 
-    # Create run
-    run_id = create_run(conn, str(target), list(lang_counts.keys()))
-    conn.execute("UPDATE scan_runs SET total_files = ? WHERE id = ?", (len(files), run_id))
+    # Create or reuse run
+    if resumed_run_id:
+        run_id = resumed_run_id
+        conn.execute("UPDATE scan_runs SET total_files = ?, status = 'in_progress' WHERE id = ?",
+                     (len(files), run_id))
+    else:
+        run_id = create_run(conn, str(target), list(lang_counts.keys()))
+        conn.execute("UPDATE scan_runs SET total_files = ? WHERE id = ?", (len(files), run_id))
     conn.commit()
 
     print(f"\nRun ID: {run_id}")
@@ -87,8 +175,16 @@ def cmd_scan(conn, args):
 
     total_candidates = 0
     candidates_by_type = {}
+    skipped = 0
 
     for file_info in files:
+        file_path_str = str(file_info["path"])
+
+        # --resume: skip already-scanned files
+        if file_path_str in scanned_paths:
+            skipped += 1
+            continue
+
         lang = file_info["language"]
         content = read_file(file_info["path"])
         if not content:
@@ -98,7 +194,6 @@ def cmd_scan(conn, args):
         lines = content.splitlines()
 
         for c in candidates:
-            # Attach snippet
             line = c.get("line_start", 1)
             c["code_snippet"] = get_snippet(lines, line)
             insert_finding(conn, run_id, c)
@@ -111,6 +206,8 @@ def cmd_scan(conn, args):
     conn.commit()
 
     print(f"\nPattern sweep complete.")
+    if skipped:
+        print(f"Skipped (resumed):  {skipped}")
     print(f"Total candidates: {total_candidates}")
 
     if candidates_by_type:
@@ -203,6 +300,8 @@ def main():
     parser.add_argument("--status-only", action="store_true", help="Show scan status and exit")
     parser.add_argument("--update-findings", metavar="JSON_FILE", help="Update findings from a JSON file")
     parser.add_argument("--force", action="store_true", help="Force new run even if recent run exists")
+    parser.add_argument("--resume", action="store_true", help="Resume latest in-progress run, skipping already-scanned files")
+    parser.add_argument("--min-severity", choices=["low", "medium", "high", "critical"], help="Only report candidates at or above this severity")
 
     args = parser.parse_args()
     conn = initialize_database()

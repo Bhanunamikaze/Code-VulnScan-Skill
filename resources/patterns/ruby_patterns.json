@@ -1,0 +1,63 @@
+{
+  "sqli": [
+    {"id": "rb-sqli-001", "regex": "\\.where\\s*\\(\\s*[\"'][^\"']*#\\{", "vuln_type": "sqli", "confidence": "likely", "description": "ActiveRecord where() with Ruby string interpolation — SQL injection"},
+    {"id": "rb-sqli-002", "regex": "\\.where\\s*\\(\\s*[\"'][^\"']*[\"']\\s*\\+\\s*\\w", "vuln_type": "sqli", "confidence": "likely", "description": "ActiveRecord where() with string concatenation"},
+    {"id": "rb-sqli-003", "regex": "\\.find_by_sql\\s*\\(\\s*[\"'][^\"']*#\\{", "vuln_type": "sqli", "confidence": "likely", "description": "find_by_sql with string interpolation"},
+    {"id": "rb-sqli-004", "regex": "\\.execute\\s*\\(\\s*[\"'][^\"']*#\\{", "vuln_type": "sqli", "confidence": "likely", "description": "ActiveRecord::Base.execute with string interpolation"},
+    {"id": "rb-sqli-005", "regex": "\\.order\\s*\\(\\s*params\\[", "vuln_type": "sqli", "confidence": "likely", "description": "ActiveRecord order() with direct params input — SQL injection"},
+    {"id": "rb-sqli-006", "regex": "\\.group\\s*\\(\\s*params\\[", "vuln_type": "sqli", "confidence": "likely", "description": "ActiveRecord group() with direct params input"},
+    {"id": "rb-sqli-007", "regex": "sanitize_sql\\s*\\(\\s*params\\[", "vuln_type": "sqli", "confidence": "possible", "description": "sanitize_sql called directly on params — verify format is safe"},
+    {"id": "rb-sqli-008", "regex": "\\.having\\s*\\(\\s*[\"'][^\"']*#\\{", "vuln_type": "sqli", "confidence": "likely", "description": "ActiveRecord having() with string interpolation"}
+  ],
+  "cmdi": [
+    {"id": "rb-cmdi-001", "regex": "`[^`]*#\\{", "vuln_type": "cmdi", "confidence": "likely", "description": "Ruby backtick command execution with string interpolation"},
+    {"id": "rb-cmdi-002", "regex": "\\bsystem\\s*\\([^)]*#\\{", "vuln_type": "cmdi", "confidence": "likely", "description": "Kernel#system with interpolated string"},
+    {"id": "rb-cmdi-003", "regex": "\\bexec\\s*\\([^)]*#\\{", "vuln_type": "cmdi", "confidence": "likely", "description": "Kernel#exec with interpolated string"},
+    {"id": "rb-cmdi-004", "regex": "\\bspawn\\s*\\([^)]*#\\{", "vuln_type": "cmdi", "confidence": "likely", "description": "Kernel#spawn with interpolated string"},
+    {"id": "rb-cmdi-005", "regex": "IO\\.popen\\s*\\([^)]*#\\{", "vuln_type": "cmdi", "confidence": "likely", "description": "IO.popen with string interpolation"},
+    {"id": "rb-cmdi-006", "regex": "Open3\\.(popen|capture|pipeline)[^(]*\\([^)]*#\\{", "vuln_type": "cmdi", "confidence": "likely", "description": "Open3 with string interpolation"},
+    {"id": "rb-cmdi-007", "regex": "%x\\{[^}]*#\\{", "vuln_type": "cmdi", "confidence": "likely", "description": "Ruby %x{} command expansion with interpolation"},
+    {"id": "rb-cmdi-008", "regex": "\\beval\\s*\\(", "vuln_type": "cmdi", "confidence": "possible", "description": "eval() — verify argument is not user-controlled"}
+  ],
+  "xss": [
+    {"id": "rb-xss-001", "regex": "\\.html_safe\\b", "vuln_type": "xss", "confidence": "possible", "description": "html_safe marks string as trusted — verify it contains no user input"},
+    {"id": "rb-xss-002", "regex": "raw\\s*\\(", "vuln_type": "xss", "confidence": "possible", "description": "ActionView raw() helper — bypasses HTML escaping"},
+    {"id": "rb-xss-003", "regex": "<%=\\s*[^-].*\\.html_safe", "vuln_type": "xss", "confidence": "likely", "description": "ERB output with html_safe — XSS if value contains user input"},
+    {"id": "rb-xss-004", "regex": "content_tag\\s*\\([^)]*params\\[", "vuln_type": "xss", "confidence": "likely", "description": "content_tag with params — verify escaping"},
+    {"id": "rb-xss-005", "regex": "sanitize\\s*\\([^)]*,\\s*tags\\s*:", "vuln_type": "xss", "confidence": "possible", "description": "Rails sanitize with custom tags allowlist — verify allowlist is restrictive"}
+  ],
+  "path_traversal": [
+    {"id": "rb-pt-001", "regex": "File\\.(read|open|write|delete)\\s*\\([^)]*params\\[", "vuln_type": "path_traversal", "confidence": "likely", "description": "File operation with params input"},
+    {"id": "rb-pt-002", "regex": "File\\.join\\s*\\([^)]*params\\[", "vuln_type": "path_traversal", "confidence": "likely", "description": "File.join with params input"},
+    {"id": "rb-pt-003", "regex": "send_file\\s*\\([^)]*params\\[", "vuln_type": "path_traversal", "confidence": "likely", "description": "Rails send_file with user-supplied path"},
+    {"id": "rb-pt-004", "regex": "render\\s+file:\\s*[^,)]*params\\[", "vuln_type": "path_traversal", "confidence": "likely", "description": "Rails render file: with user-supplied path"},
+    {"id": "rb-pt-005", "regex": "Pathname\\.new\\s*\\([^)]*params\\[", "vuln_type": "path_traversal", "confidence": "likely", "description": "Pathname with user input — verify no traversal sequences"},
+    {"id": "rb-pt-006", "regex": "Dir\\.glob\\s*\\([^)]*params\\[", "vuln_type": "path_traversal", "confidence": "likely", "description": "Dir.glob with user input"}
+  ],
+  "mass_assignment": [
+    {"id": "rb-ma-001", "regex": "\\.update_attributes\\s*\\(\\s*params\\b", "vuln_type": "mass_assignment", "confidence": "likely", "description": "Mass assignment with unfiltered params — use strong parameters"},
+    {"id": "rb-ma-002", "regex": "\\.update\\s*\\(\\s*params\\[\\s*:[^]]+\\]\\s*\\)", "vuln_type": "mass_assignment", "confidence": "possible", "description": "ActiveRecord update() with params slice — verify permit() is applied"},
+    {"id": "rb-ma-003", "regex": "\\.new\\s*\\(\\s*params\\b(?!\\.require)", "vuln_type": "mass_assignment", "confidence": "likely", "description": "Model.new with raw params — missing strong parameters"},
+    {"id": "rb-ma-004", "regex": "attr_accessible\\s", "vuln_type": "mass_assignment", "confidence": "possible", "description": "attr_accessible (Rails 3) — may be too permissive"}
+  ],
+  "deserialization": [
+    {"id": "rb-deser-001", "regex": "Marshal\\.load\\s*\\(", "vuln_type": "deserialization", "confidence": "likely", "description": "Marshal.load — arbitrary code execution if data is user-controlled"},
+    {"id": "rb-deser-002", "regex": "YAML\\.load\\s*\\([^)]+\\)(?!.*safe_load)", "vuln_type": "deserialization", "confidence": "likely", "description": "YAML.load without Psych safe_load — arbitrary object deserialization"},
+    {"id": "rb-deser-003", "regex": "JSON\\.load\\s*\\(", "vuln_type": "deserialization", "confidence": "possible", "description": "JSON.load can deserialize arbitrary objects — use JSON.parse instead"},
+    {"id": "rb-deser-004", "regex": "Oj\\.load\\s*\\(", "vuln_type": "deserialization", "confidence": "possible", "description": "Oj.load with default object mode — unsafe deserialization"}
+  ],
+  "crypto": [
+    {"id": "rb-crypto-001", "regex": "Digest::MD5\\.hexdigest\\b", "vuln_type": "weak_crypto", "confidence": "possible", "description": "MD5 — insecure for security-sensitive use"},
+    {"id": "rb-crypto-002", "regex": "Digest::SHA1\\.hexdigest\\b", "vuln_type": "weak_crypto", "confidence": "possible", "description": "SHA1 — insecure for security-sensitive use"},
+    {"id": "rb-crypto-003", "regex": "rand\\s*\\(", "vuln_type": "insecure_random", "confidence": "possible", "description": "Kernel#rand — not cryptographically secure. Use SecureRandom"},
+    {"id": "rb-crypto-004", "regex": "OpenSSL::Cipher\\.new\\s*\\(['\"]des", "vuln_type": "weak_crypto", "confidence": "confirmed", "description": "DES cipher — insecure, use AES-256"},
+    {"id": "rb-crypto-005", "regex": "OpenSSL::Cipher\\.new\\s*\\(['\"]rc4", "vuln_type": "weak_crypto", "confidence": "confirmed", "description": "RC4 cipher — broken, use AES-256-GCM"},
+    {"id": "rb-crypto-006", "regex": "verify_mode\\s*=\\s*OpenSSL::SSL::VERIFY_NONE", "vuln_type": "tls_bypass", "confidence": "confirmed", "description": "TLS certificate verification disabled"}
+  ],
+  "ssrf": [
+    {"id": "rb-ssrf-001", "regex": "Net::HTTP\\.get\\s*\\([^)]*params\\[", "vuln_type": "ssrf", "confidence": "likely", "description": "Net::HTTP.get with user-supplied URL"},
+    {"id": "rb-ssrf-002", "regex": "URI\\.open\\s*\\([^)]*params\\[", "vuln_type": "ssrf", "confidence": "likely", "description": "URI.open (Kernel#open) with user-supplied URL — SSRF"},
+    {"id": "rb-ssrf-003", "regex": "open\\s*\\([^)]*params\\[", "vuln_type": "ssrf", "confidence": "possible", "description": "Kernel#open with user input — SSRF or command injection"},
+    {"id": "rb-ssrf-004", "regex": "RestClient\\.(get|post|put|delete)\\s*\\([^)]*params\\[", "vuln_type": "ssrf", "confidence": "likely", "description": "RestClient request with user-supplied URL"}
+  ]
+}

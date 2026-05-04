@@ -1,0 +1,49 @@
+{
+  "sqli": [
+    {"id": "kt-sqli-001", "regex": "rawQuery\\s*\\([^,]*\\$\\{", "vuln_type": "sqli", "confidence": "likely", "description": "Android rawQuery with Kotlin string template — SQL injection"},
+    {"id": "kt-sqli-002", "regex": "rawQuery\\s*\\([^,]*\\+\\s*\\w", "vuln_type": "sqli", "confidence": "likely", "description": "Android rawQuery with string concatenation — SQL injection"},
+    {"id": "kt-sqli-003", "regex": "execSQL\\s*\\([^)]*\\$\\{", "vuln_type": "sqli", "confidence": "likely", "description": "Android execSQL with Kotlin string template — SQL injection"},
+    {"id": "kt-sqli-004", "regex": "createStatement\\s*\\(\\s*\\)\\.execute\\w*\\s*\\([^)]*\\$\\{", "vuln_type": "sqli", "confidence": "likely", "description": "JDBC statement execution with string template"},
+    {"id": "kt-sqli-005", "regex": "createStatement\\s*\\(\\s*\\)\\.execute\\w*\\s*\\([^)]*\\+\\s*\\w", "vuln_type": "sqli", "confidence": "likely", "description": "JDBC statement execution with concatenation"},
+    {"id": "kt-sqli-006", "regex": "entityManager\\.createNativeQuery\\s*\\([^)]*\\$\\{", "vuln_type": "sqli", "confidence": "likely", "description": "JPA createNativeQuery with string template — SQL injection"},
+    {"id": "kt-sqli-007", "regex": "Exposed.*\\b(exec|query)\\b.*\\$\\{", "vuln_type": "sqli", "confidence": "likely", "description": "Exposed ORM with string template in query"}
+  ],
+  "cmdi": [
+    {"id": "kt-cmdi-001", "regex": "Runtime\\.getRuntime\\s*\\(\\s*\\)\\.exec\\s*\\([^)]*\\$\\{", "vuln_type": "cmdi", "confidence": "likely", "description": "Runtime.exec with Kotlin string template — command injection"},
+    {"id": "kt-cmdi-002", "regex": "ProcessBuilder\\s*\\([^)]*\\$\\{", "vuln_type": "cmdi", "confidence": "likely", "description": "ProcessBuilder with string template — command injection"},
+    {"id": "kt-cmdi-003", "regex": "ProcessBuilder\\s*\\(listOf\\s*\\([^)]*\\+\\s*\\w", "vuln_type": "cmdi", "confidence": "likely", "description": "ProcessBuilder with concatenated argument"},
+    {"id": "kt-cmdi-004", "regex": "\\beval\\b.*\\$\\{", "vuln_type": "cmdi", "confidence": "possible", "description": "Dynamic evaluation with string template"}
+  ],
+  "path_traversal": [
+    {"id": "kt-pt-001", "regex": "File\\s*\\(\\s*\\w+,\\s*request\\.", "vuln_type": "path_traversal", "confidence": "likely", "description": "File constructor with request data — path traversal"},
+    {"id": "kt-pt-002", "regex": "File\\s*\\([^)]*\\$\\{request\\.", "vuln_type": "path_traversal", "confidence": "likely", "description": "File with request data in string template — path traversal"},
+    {"id": "kt-pt-003", "regex": "Paths\\.get\\s*\\([^)]*request\\.", "vuln_type": "path_traversal", "confidence": "likely", "description": "Paths.get with request data — path traversal"},
+    {"id": "kt-pt-004", "regex": "readText\\s*\\(\\s*\\)|readBytes\\s*\\(\\s*\\).*File\\s*\\([^)]*request\\.", "vuln_type": "path_traversal", "confidence": "likely", "description": "File.readText/readBytes with user-supplied path"}
+  ],
+  "deserialization": [
+    {"id": "kt-deser-001", "regex": "ObjectInputStream\\s*\\(", "vuln_type": "deserialization", "confidence": "possible", "description": "Java ObjectInputStream — arbitrary object deserialization. Use safe formats (JSON/Protobuf)"},
+    {"id": "kt-deser-002", "regex": "defaultMapper\\.readValue\\s*\\([^)]*,\\s*Any::class\\.java\\)", "vuln_type": "deserialization", "confidence": "likely", "description": "Jackson readValue to Any — polymorphic deserialization. Enable activateDefaultTyping restrictions"},
+    {"id": "kt-deser-003", "regex": "Json\\s*\\{[^}]*isLenient\\s*=\\s*true", "vuln_type": "deserialization", "confidence": "possible", "description": "kotlinx.serialization lenient mode — may accept unexpected input"},
+    {"id": "kt-deser-004", "regex": "PolymorphicSerializer|PolymorphicModuleBuilder", "vuln_type": "deserialization", "confidence": "possible", "description": "Polymorphic serialization — verify allowed subtypes are restricted"}
+  ],
+  "crypto": [
+    {"id": "kt-crypto-001", "regex": "MessageDigest\\.getInstance\\s*\\([\"']MD5[\"']", "vuln_type": "weak_crypto", "confidence": "possible", "description": "MD5 MessageDigest — insecure for security-sensitive use"},
+    {"id": "kt-crypto-002", "regex": "MessageDigest\\.getInstance\\s*\\([\"']SHA-1[\"']", "vuln_type": "weak_crypto", "confidence": "possible", "description": "SHA-1 — insecure for security-sensitive use"},
+    {"id": "kt-crypto-003", "regex": "SecretKeySpec\\s*\\([^,]+,\\s*[\"']AES[\"']\\).*MODE_ECB", "vuln_type": "weak_crypto", "confidence": "confirmed", "description": "AES-ECB mode — deterministic, leaks patterns"},
+    {"id": "kt-crypto-004", "regex": "Random\\s*\\(\\s*\\)\\.nextInt|Math\\.random\\s*\\(", "vuln_type": "insecure_random", "confidence": "possible", "description": "Non-CSPRNG random — use SecureRandom for security tokens"},
+    {"id": "kt-crypto-005", "regex": "Cipher\\.getInstance\\s*\\([\"']DES", "vuln_type": "weak_crypto", "confidence": "confirmed", "description": "DES cipher — insecure, use AES-256-GCM"}
+  ],
+  "android_specific": [
+    {"id": "kt-android-001", "regex": "WebView.*addJavascriptInterface\\s*\\(", "vuln_type": "code_execution", "confidence": "possible", "description": "WebView.addJavascriptInterface — exposes Java methods to JavaScript; restrict to trusted origins"},
+    {"id": "kt-android-002", "regex": "setJavaScriptEnabled\\s*\\(\\s*true\\s*\\)", "vuln_type": "xss", "confidence": "possible", "description": "WebView JavaScript enabled — XSS risk if loading untrusted content"},
+    {"id": "kt-android-003", "regex": "MODE_WORLD_READABLE|MODE_WORLD_WRITEABLE", "vuln_type": "info_disclosure", "confidence": "confirmed", "description": "World-readable/writable file mode — any app can access the file"},
+    {"id": "kt-android-004", "regex": "getSharedPreferences\\s*\\([^)]+,\\s*[A-Z_]+MODE_WORLD", "vuln_type": "info_disclosure", "confidence": "confirmed", "description": "SharedPreferences with world-readable/writable mode"},
+    {"id": "kt-android-005", "regex": "Log\\.[divewtf]\\s*\\([^)]*password|Log\\.[divewtf]\\s*\\([^)]*token", "vuln_type": "info_disclosure", "confidence": "likely", "description": "Logging sensitive data (password/token) — visible in logcat"},
+    {"id": "kt-android-006", "regex": "allowBackup\\s*=\\s*[\"']true[\"']", "vuln_type": "info_disclosure", "confidence": "possible", "description": "android:allowBackup=true — app data may be extracted via ADB backup"}
+  ],
+  "ssrf": [
+    {"id": "kt-ssrf-001", "regex": "URL\\s*\\(\\s*request\\.", "vuln_type": "ssrf", "confidence": "likely", "description": "java.net.URL constructed from request data — SSRF"},
+    {"id": "kt-ssrf-002", "regex": "HttpURLConnection.*request\\.", "vuln_type": "ssrf", "confidence": "likely", "description": "HttpURLConnection with user-supplied URL — SSRF"},
+    {"id": "kt-ssrf-003", "regex": "OkHttpClient.*\\.url\\s*\\([^)]*request\\.", "vuln_type": "ssrf", "confidence": "likely", "description": "OkHttp request with user-supplied URL — SSRF"}
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "cmdi": [
+    {"id": "sh-cmdi-001", "regex": "eval\\s+[\"$]", "vuln_type": "cmdi", "confidence": "likely", "description": "eval with variable — command injection if variable contains user input"},
+    {"id": "sh-cmdi-002", "regex": "eval\\s+`", "vuln_type": "cmdi", "confidence": "likely", "description": "eval with command substitution — double-evaluation injection"},
+    {"id": "sh-cmdi-003", "regex": "\\$\\(.*\\$\\{?[A-Z_a-z]+\\}?.*\\)", "vuln_type": "cmdi", "confidence": "possible", "description": "Command substitution containing variable — verify variable is sanitised"},
+    {"id": "sh-cmdi-004", "regex": "exec\\s+\\$\\{?\\w+\\}?\\b", "vuln_type": "cmdi", "confidence": "likely", "description": "exec with variable — command injection if variable is user-controlled"},
+    {"id": "sh-cmdi-005", "regex": "bash\\s+-c\\s+[\"'].*\\$", "vuln_type": "cmdi", "confidence": "likely", "description": "bash -c with variable in string — injection if variable is user-controlled"},
+    {"id": "sh-cmdi-006", "regex": "sh\\s+-c\\s+[\"'].*\\$", "vuln_type": "cmdi", "confidence": "likely", "description": "sh -c with variable — injection if variable is user-controlled"},
+    {"id": "sh-cmdi-007", "regex": "\\bxargs\\b.*\\$\\{?\\w+\\}?", "vuln_type": "cmdi", "confidence": "possible", "description": "xargs with variable argument — verify variable is not user-controlled"},
+    {"id": "sh-cmdi-008", "regex": "\\bsudo\\s+[^-].*\\$", "vuln_type": "cmdi", "confidence": "possible", "description": "sudo with variable argument — privilege escalation if variable is user-controlled"}
+  ],
+  "unquoted_expansion": [
+    {"id": "sh-uq-001", "regex": "for\\s+\\w+\\s+in\\s+\\$(?!\\(|\\{#|\\{!)", "vuln_type": "word_splitting", "confidence": "possible", "description": "Unquoted variable in for loop — word splitting and glob expansion. Quote: \"$var\""},
+    {"id": "sh-uq-002", "regex": "\\[\\s*\\$\\w+\\s*=|\\[\\s*\\$\\w+\\s*!=|\\[\\s*-[a-z]\\s+\\$\\w+\\b(?!\")", "vuln_type": "word_splitting", "confidence": "possible", "description": "Unquoted variable in [ ] test — word splitting. Use [[ ]] or quote the variable"},
+    {"id": "sh-uq-003", "regex": "cp\\s+\\$\\w+\\s|mv\\s+\\$\\w+\\s|rm\\s+\\$\\w+\\s", "vuln_type": "word_splitting", "confidence": "possible", "description": "Unquoted variable as file path argument — glob expansion and word splitting. Quote: \"$var\""},
+    {"id": "sh-uq-004", "regex": "echo\\s+\\$(?!\\{|\\()", "vuln_type": "word_splitting", "confidence": "possible", "description": "echo with unquoted variable — glob expansion. Use echo \"$var\""}
+  ],
+  "path_injection": [
+    {"id": "sh-path-001", "regex": "export\\s+PATH\\s*=\\s*[^:]*:\\$PATH\\b(?!\")", "vuln_type": "path_injection", "confidence": "possible", "description": "PATH prepend without quoting — verify prepended directory is trusted"},
+    {"id": "sh-path-002", "regex": "PATH\\s*=\\s*\\.", "vuln_type": "path_injection", "confidence": "likely", "description": "Current directory in PATH — allows hijacking commands via local files"},
+    {"id": "sh-path-003", "regex": "export\\s+PATH\\s*=\\s*\\$\\{?\\w+\\}?[:/]", "vuln_type": "path_injection", "confidence": "possible", "description": "PATH set from variable — verify variable is not user-controlled"},
+    {"id": "sh-path-004", "regex": "LD_LIBRARY_PATH\\s*=|LD_PRELOAD\\s*=", "vuln_type": "path_injection", "confidence": "possible", "description": "LD_LIBRARY_PATH/LD_PRELOAD set — can redirect dynamic library loading"}
+  ],
+  "remote_code": [
+    {"id": "sh-rce-001", "regex": "curl\\s+[^|]*\\|\\s*(bash|sh|python|perl|ruby)", "vuln_type": "rce", "confidence": "confirmed", "description": "curl | bash pattern — downloads and executes arbitrary code. Verify URL is trusted"},
+    {"id": "sh-rce-002", "regex": "wget\\s+[^|]*\\|\\s*(bash|sh|python|perl|ruby)", "vuln_type": "rce", "confidence": "confirmed", "description": "wget | bash pattern — downloads and executes arbitrary code. Verify URL is trusted"},
+    {"id": "sh-rce-003", "regex": "curl\\s+[^>]*>\\s*/tmp/\\w+\\s*&&\\s*(bash|sh|chmod)", "vuln_type": "rce", "confidence": "likely", "description": "Download to /tmp then execute — potential RCE"},
+    {"id": "sh-rce-004", "regex": "\\bsource\\s+<\\s*\\(\\s*curl", "vuln_type": "rce", "confidence": "confirmed", "description": "source <(curl ...) — remote code execution via process substitution"}
+  ],
+  "info_disclosure": [
+    {"id": "sh-id-001", "regex": "set\\s+-x|set\\s+-v", "vuln_type": "info_disclosure", "confidence": "possible", "description": "Shell debug mode (set -x/-v) — prints commands with expanded values including secrets to stderr"},
+    {"id": "sh-id-002", "regex": "echo\\s+.*password|echo\\s+.*secret|echo\\s+.*token|echo\\s+.*key", "vuln_type": "info_disclosure", "confidence": "possible", "description": "Echoing sensitive variable — may appear in logs or terminal history"},
+    {"id": "sh-id-003", "regex": "printenv|env\\s*$", "vuln_type": "info_disclosure", "confidence": "possible", "description": "Printing all environment variables — may expose secrets"}
+  ],
+  "temp_file": [
+    {"id": "sh-tmp-001", "regex": "/tmp/\\$\\$|/tmp/\\$RANDOM", "vuln_type": "toctou", "confidence": "possible", "description": "Temp file with PID/RANDOM — predictable name allows symlink attacks. Use mktemp"},
+    {"id": "sh-tmp-002", "regex": "mktemp\\s+-u", "vuln_type": "toctou", "confidence": "likely", "description": "mktemp -u (dry-run) — returns unused name without creating file, race condition. Omit -u"},
+    {"id": "sh-tmp-003", "regex": ">\\s*/tmp/[a-zA-Z_-]+\\b(?!\\w)", "vuln_type": "toctou", "confidence": "possible", "description": "Fixed /tmp filename — predictable temp file can be hijacked. Use mktemp"}
+  ],
+  "secrets": [
+    {"id": "sh-sec-001", "regex": "PASSWORD\\s*=\\s*['\"][^'\"]{4,}", "vuln_type": "hardcoded_secret", "confidence": "possible", "description": "Hardcoded PASSWORD in shell script — use secrets manager or env variable"},
+    {"id": "sh-sec-002", "regex": "API_KEY\\s*=\\s*['\"][^'\"]{8,}", "vuln_type": "hardcoded_secret", "confidence": "possible", "description": "Hardcoded API_KEY in shell script"},
+    {"id": "sh-sec-003", "regex": "SECRET\\s*=\\s*['\"][^'\"]{8,}", "vuln_type": "hardcoded_secret", "confidence": "possible", "description": "Hardcoded SECRET in shell script"},
+    {"id": "sh-sec-004", "regex": "TOKEN\\s*=\\s*['\"][^'\"]{8,}", "vuln_type": "hardcoded_secret", "confidence": "possible", "description": "Hardcoded TOKEN in shell script"}
+  ]
+}
