@@ -8,6 +8,9 @@ Usage:
 
 import argparse
 import json
+import re
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -66,6 +69,97 @@ def scan_path(base_path: Path, min_entropy: float = HIGH_ENTROPY_THRESHOLD,
     return all_findings
 
 
+def scan_git_history(repo_path: str, max_commits: int = 200) -> list:
+    """Scan git history for secrets in committed diffs.
+
+    Checks up to *max_commits* commits and scans every added line (+) in each
+    diff for secret patterns.  Returns findings with commit metadata.
+    """
+    repo = Path(repo_path).resolve()
+
+    # Verify git is available
+    if not shutil.which("git"):
+        print("Warning: git not found in PATH — skipping git history scan", file=sys.stderr)
+        return []
+
+    # Verify this is actually a git repository
+    check = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "--is-inside-work-tree"],
+        capture_output=True, text=True,
+    )
+    if check.returncode != 0:
+        print(f"Warning: {repo} is not a git repository — skipping git history scan",
+              file=sys.stderr)
+        return []
+
+    # Get commit list: hash + subject on one line
+    log_result = subprocess.run(
+        ["git", "-C", str(repo), "log", "--oneline", f"-n{max_commits}"],
+        capture_output=True, text=True,
+    )
+    if log_result.returncode != 0:
+        print(f"Warning: git log failed: {log_result.stderr.strip()}", file=sys.stderr)
+        return []
+
+    commit_lines = [l.strip() for l in log_result.stdout.splitlines() if l.strip()]
+    if not commit_lines:
+        return []
+
+    print(f"Scanning git history: {len(commit_lines)} commits in {repo}", file=sys.stderr)
+
+    all_findings = []
+    seen_keys: set = set()
+
+    for entry in commit_lines:
+        parts = entry.split(" ", 1)
+        commit_hash = parts[0]
+        commit_msg = parts[1] if len(parts) > 1 else ""
+
+        diff_result = subprocess.run(
+            ["git", "-C", str(repo), "diff", f"{commit_hash}^..{commit_hash}"],
+            capture_output=True, text=True,
+        )
+        if diff_result.returncode != 0:
+            # First commit has no parent — use show instead
+            diff_result = subprocess.run(
+                ["git", "-C", str(repo), "show", commit_hash],
+                capture_output=True, text=True,
+            )
+            if diff_result.returncode != 0:
+                continue
+
+        current_file = f"<git:{commit_hash[:8]}>"
+        diff_line_num = 0
+
+        for diff_line in diff_result.stdout.splitlines():
+            # Track which file we're in
+            if diff_line.startswith("+++ b/"):
+                current_file = diff_line[6:]
+                diff_line_num = 0
+                continue
+            if diff_line.startswith("@@"):
+                # Parse hunk header to get starting line number
+                m = re.search(r"\+(\d+)", diff_line)
+                diff_line_num = int(m.group(1)) if m else 0
+                continue
+            if diff_line.startswith("+") and not diff_line.startswith("+++"):
+                diff_line_num += 1
+                added_content = diff_line[1:]  # strip the leading +
+                hits = scan_line_for_secrets(added_content, diff_line_num, current_file)
+                for hit in hits:
+                    dedup_key = (commit_hash, current_file, diff_line_num, hit["secret_type"])
+                    if dedup_key in seen_keys:
+                        continue
+                    seen_keys.add(dedup_key)
+                    hit["git_commit"] = commit_hash
+                    hit["git_commit_message"] = commit_msg
+                    hit["detection_context"] = "git_history"
+                    all_findings.append(hit)
+
+    print(f"Git history scan complete: {len(all_findings)} findings", file=sys.stderr)
+    return all_findings
+
+
 def deduplicate(findings: list) -> list:
     seen = set()
     out = []
@@ -83,6 +177,10 @@ def main():
     parser.add_argument("--min-entropy", type=float, default=HIGH_ENTROPY_THRESHOLD,
                         help=f"Minimum entropy threshold (default: {HIGH_ENTROPY_THRESHOLD})")
     parser.add_argument("--include-tests", action="store_true")
+    parser.add_argument("--git-history", action="store_true",
+                        help="Also scan git commit history for secrets (up to --max-commits commits)")
+    parser.add_argument("--max-commits", type=int, default=200,
+                        help="Maximum number of git commits to scan (default: 200)")
     parser.add_argument("--output", help="Output JSON file path")
     parser.add_argument("--pretty", action="store_true")
     args = parser.parse_args()
@@ -94,6 +192,11 @@ def main():
 
     print(f"Scanning for secrets in: {base}", file=sys.stderr)
     findings = scan_path(base, args.min_entropy, args.include_tests)
+
+    if args.git_history:
+        git_findings = scan_git_history(str(base), max_commits=args.max_commits)
+        findings.extend(git_findings)
+
     findings = deduplicate(findings)
 
     severity_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}

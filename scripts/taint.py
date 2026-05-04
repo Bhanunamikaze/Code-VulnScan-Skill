@@ -216,6 +216,40 @@ PHP_SINKS = {
     ],
 }
 
+# ── Go taint definitions ──────────────────────────────────────────────────
+
+GO_SOURCES = [
+    r'c\.Query\s*\(',          # Gin
+    r'c\.Param\s*\(',          # Gin
+    r'c\.PostForm\s*\(',       # Gin
+    r'r\.FormValue\s*\(',      # stdlib net/http
+    r'r\.URL\.Query\(\)',      # stdlib net/http
+    r'c\.Request\.FormValue\s*\(',  # Chi/Fiber
+    r'ctx\.Query\s*\(',        # Echo
+    r'ctx\.Param\s*\(',        # Echo
+]
+
+GO_SINKS = {
+    "sqli": [
+        r'\.Query\s*\(\s*(?:fmt\.Sprintf|fmt\.Printf)',
+        r'db\.Exec\s*\(\s*fmt\.Sprintf',
+    ],
+    "cmdi": [
+        r'exec\.Command\s*\(',
+        r'exec\.CommandContext\s*\(',
+    ],
+    "ssrf": [
+        r'http\.Get\s*\(',
+        r'http\.Post\s*\(',
+        r'client\.Do\s*\(',
+    ],
+    "path_traversal": [
+        r'os\.Open\s*\(',
+        r'ioutil\.ReadFile\s*\(',
+        r'os\.ReadFile\s*\(',
+    ],
+}
+
 
 def analyze_python_ast(content: str, file_path: str) -> dict:
     """Use Python AST to find source→sink chains within functions."""
@@ -334,6 +368,9 @@ def analyze_with_patterns(content: str, file_path: str, language: str) -> dict:
     elif language == "php":
         sources = PHP_SOURCES
         sinks = PHP_SINKS
+    elif language == "go":
+        sources = GO_SOURCES
+        sinks = GO_SINKS
     else:
         return results
 
@@ -368,6 +405,145 @@ def analyze_with_patterns(content: str, file_path: str, language: str) -> dict:
     return results
 
 
+def analyze_with_variable_tracking(content: str, file_path: str, language: str) -> dict:
+    """Variable-aware taint analysis for JavaScript/TypeScript and PHP.
+
+    Tracks assignments so that taint flows through variable names instead of
+    relying purely on source/sink proximity.  Falls back to
+    `analyze_with_patterns` when the language is not supported here.
+    """
+    if language not in ("javascript", "typescript", "php"):
+        return analyze_with_patterns(content, file_path, language)
+
+    results = {"sources": [], "sinks": [], "potential_paths": []}
+    lines = content.splitlines()
+
+    if language in ("javascript", "typescript"):
+        sources = JS_SOURCES
+        sinks = JS_SINKS
+        # JS/TS assignment: const/let/var name = <rhs>   or   name = <rhs>
+        assign_re = re.compile(
+            r"(?:const|let|var)\s+(\w+)\s*=\s*(.+)"
+            r"|"
+            r"(\w+)\s*=\s*(.+)"
+        )
+        # PHP-style variable prefix not applicable
+        php_mode = False
+    else:
+        sources = PHP_SOURCES
+        sinks = PHP_SINKS
+        # PHP: $var = <rhs>
+        assign_re = re.compile(r"\$(\w+)\s*=\s*(.+)")
+        php_mode = True
+
+    # tainted_vars maps var_name -> {"source_line": int, "source_code": str, "pattern": str}
+    tainted_vars: dict = {}
+
+    def _var_in_line(var_name: str, line: str) -> bool:
+        """Check whether a (possibly tainted) variable appears in a line."""
+        if php_mode:
+            return bool(re.search(r'\$' + re.escape(var_name) + r'\b', line))
+        return bool(re.search(r'\b' + re.escape(var_name) + r'\b', line))
+
+    for i, line in enumerate(lines, start=1):
+        # ── Step 1: detect assignments that capture a source ───────────────
+        m = assign_re.search(line)
+        if m:
+            if php_mode:
+                var_name = m.group(1)
+                rhs = m.group(2) or ""
+            else:
+                # Two alternatives: (const/let/var form) or (bare assignment)
+                var_name = m.group(1) or m.group(3)
+                rhs = m.group(2) or m.group(4) or ""
+
+            if var_name and rhs:
+                for src_pattern in (sources if isinstance(sources, list) else []):
+                    if re.search(src_pattern, rhs):
+                        tainted_vars[var_name] = {
+                            "source_line": i,
+                            "source_code": line.strip(),
+                            "pattern": src_pattern,
+                        }
+                        results["sources"].append({
+                            "line": i,
+                            "variable": var_name,
+                            "code": line.strip(),
+                            "pattern": src_pattern,
+                        })
+                        break
+
+                # Propagate: if RHS contains a tainted var, new var is also tainted
+                for existing_var, info in list(tainted_vars.items()):
+                    if _var_in_line(existing_var, rhs):
+                        if var_name not in tainted_vars:
+                            tainted_vars[var_name] = {
+                                "source_line": info["source_line"],
+                                "source_code": info["source_code"],
+                                "pattern": info["pattern"],
+                            }
+                        break
+
+        # ── Step 2: also record bare source appearances (no assignment) ────
+        for src_pattern in (sources if isinstance(sources, list) else []):
+            if re.search(src_pattern, line):
+                # Only add if we didn't already catch it as an assignment rhs
+                if not any(s["line"] == i for s in results["sources"]):
+                    results["sources"].append({
+                        "line": i,
+                        "variable": None,
+                        "code": line.strip(),
+                        "pattern": src_pattern,
+                    })
+
+        # ── Step 3: check sinks, prefer variable-tracking over proximity ───
+        for sink_type, sink_patterns in sinks.items():
+            for sink_pattern in sink_patterns:
+                if not re.search(sink_pattern, line):
+                    continue
+
+                # Record the sink regardless
+                results["sinks"].append({
+                    "line": i,
+                    "sink_type": sink_type,
+                    "code": line.strip(),
+                    "pattern": sink_pattern,
+                })
+
+                # Variable-aware path: tainted var appears in sink line
+                matched_via_var = False
+                for var_name, info in tainted_vars.items():
+                    if _var_in_line(var_name, line):
+                        results["potential_paths"].append({
+                            "source_line": info["source_line"],
+                            "source_code": info["source_code"],
+                            "tainted_var": var_name,
+                            "sink_line": i,
+                            "sink_type": sink_type,
+                            "sink_code": line.strip(),
+                            "confidence": "likely",
+                            "note": "Variable-tracking: tainted variable flows to sink",
+                        })
+                        matched_via_var = True
+
+                # Fallback: proximity matching if no variable path found
+                if not matched_via_var:
+                    nearby_sources = [s for s in results["sources"] if abs(s["line"] - i) <= 20]
+                    for src in nearby_sources:
+                        results["potential_paths"].append({
+                            "source_line": src["line"],
+                            "source_code": src["code"],
+                            "tainted_var": src.get("variable"),
+                            "sink_line": i,
+                            "sink_type": sink_type,
+                            "sink_code": line.strip(),
+                            "confidence": "possible",
+                            "note": "Pattern proximity — requires manual verification",
+                        })
+
+    return results
+
+
 def analyze_file(file_path: str, language: str = None) -> dict:
     p = Path(file_path)
     if not language:
@@ -379,6 +555,10 @@ def analyze_file(file_path: str, language: str = None) -> dict:
 
     if language == "python":
         results = analyze_python_ast(content, file_path)
+    elif language in ("javascript", "typescript", "php"):
+        results = analyze_with_variable_tracking(content, file_path, language)
+    elif language == "go":
+        results = analyze_with_patterns(content, file_path, language)
     else:
         results = analyze_with_patterns(content, file_path, language)
 

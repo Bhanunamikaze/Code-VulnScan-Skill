@@ -47,6 +47,39 @@ SECRET_PATTERNS = [
     (r"[0-9a-f]{32}-us[0-9]{1,2}", "mailchimp_api_key", "high"),
     # SendGrid
     (r"SG\.[A-Za-z0-9_\-]{22}\.[A-Za-z0-9_\-]{43}", "sendgrid_api_key", "high"),
+    # Azure
+    (r"(?i)(?:account.?key|storage.?key)\s*[=:]\s*['\"]?([A-Za-z0-9+/]{86}==)", "azure_storage_key", "critical"),
+    (r"(?i)(?:client.?secret|app.?secret)\s*[=:]\s*['\"]?([A-Za-z0-9~._\-]{34,40})['\"]?", "azure_client_secret", "high"),
+    # GCP
+    (r'"type"\s*:\s*"service_account"', "gcp_service_account", "critical"),
+    (r"AIza[0-9A-Za-z\-_]{35}", "gcp_api_key", "high"),
+    # Twilio
+    (r"AC[a-f0-9]{32}", "twilio_account_sid", "high"),
+    (r"(?i)twilio.*auth.*token\s*[=:]\s*['\"]?([a-f0-9]{32})['\"]?", "twilio_auth_token", "high"),
+    # Heroku
+    (r"(?i)heroku.*[=:]\s*['\"]?([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})['\"]?", "heroku_api_key", "high"),
+    # npm
+    (r"npm_[A-Za-z0-9]{36}", "npm_token", "high"),
+    (r"//registry\.npmjs\.org/:_authToken\s*=\s*([^\s]+)", "npmrc_token", "high"),
+    # Docker Hub
+    (r"dckr_pat_[A-Za-z0-9_\-]{27}", "dockerhub_token", "high"),
+    # HashiCorp Vault
+    (r"s\.[A-Za-z0-9]{24}", "vault_token", "critical"),
+    (r"b\.[A-Za-z0-9+/]{90,}", "vault_batch_token", "critical"),
+    # Databricks
+    (r"dapi[a-f0-9]{32}", "databricks_token", "high"),
+    # Vercel
+    (r"(?i)vercel.*token\s*[=:]\s*['\"]?([A-Za-z0-9]{24})['\"]?", "vercel_token", "high"),
+    # SendGrid (additional full pattern — already have prefix match above)
+    # PagerDuty
+    (r"(?i)pagerduty.*key\s*[=:]\s*['\"]?([A-Za-z0-9+/]{20})['\"]?", "pagerduty_key", "high"),
+    # Additional private key types
+    (r"-----BEGIN OPENSSH PRIVATE KEY-----", "openssh_private_key", "critical"),
+    (r"-----BEGIN EC PRIVATE KEY-----", "ec_private_key", "critical"),
+    # JWT tokens (actual tokens, not patterns)
+    (r"eyJ[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}", "jwt_token", "medium"),
+    # Generic password in config
+    (r'(?i)(?:password|passwd|pwd)\s*[=:]\s*["\']([^"\']{8,})["\']', "generic_password", "medium"),
 ]
 
 # Strings that look like secrets but are not

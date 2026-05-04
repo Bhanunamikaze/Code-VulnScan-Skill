@@ -194,6 +194,289 @@ def generate_json(run, findings) -> dict:
     }
 
 
+def generate_html(run, findings) -> str:
+    """Generate a standalone HTML report with inline CSS, no external dependencies."""
+    from collections import defaultdict
+
+    ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+
+    sev_counts = {s: 0 for s in SEVERITY_ORDER}
+    for f in findings:
+        sev_counts[f["severity"]] = sev_counts.get(f["severity"], 0) + 1
+
+    # Severity badge colours
+    sev_colors = {
+        "critical": ("#ff4444", "#fff"),
+        "high": ("#ff8c00", "#fff"),
+        "medium": ("#ffd700", "#222"),
+        "low": ("#4caf50", "#fff"),
+        "informational": ("#2196f3", "#fff"),
+    }
+
+    def _badge(sev: str) -> str:
+        bg, fg = sev_colors.get(sev, ("#888", "#fff"))
+        return (f'<span style="background:{bg};color:{fg};padding:2px 8px;'
+                f'border-radius:4px;font-size:0.8em;font-weight:bold;'
+                f'text-transform:uppercase">{sev}</span>')
+
+    def _esc(text: str) -> str:
+        """HTML-escape a string."""
+        if not text:
+            return ""
+        return (text
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace('"', "&quot;"))
+
+    # Build ASCII bar chart for executive summary
+    max_count = max(sev_counts.values()) if sev_counts.values() else 1
+    bar_width = 30
+
+    def _bar(count: int) -> str:
+        if max_count == 0:
+            return ""
+        filled = round(count / max_count * bar_width)
+        return "&#9608;" * filled + "&#9617;" * (bar_width - filled)
+
+    # Group findings by severity
+    by_sev = defaultdict(list)
+    for f in findings:
+        by_sev[f["severity"]].append(f)
+
+    # Table of contents entries
+    toc_items = []
+    for sev in ["critical", "high", "medium", "low", "informational"]:
+        if by_sev.get(sev):
+            toc_items.append(
+                f'<li><a href="#sev-{sev}">{sev.capitalize()} ({len(by_sev[sev])})</a></li>'
+            )
+
+    # Build findings HTML
+    findings_html_parts = []
+    for sev in ["critical", "high", "medium", "low", "informational"]:
+        sev_list = by_sev.get(sev, [])
+        if not sev_list:
+            continue
+        bg, fg = sev_colors.get(sev, ("#888", "#fff"))
+        findings_html_parts.append(
+            f'<section id="sev-{sev}">'
+            f'<h2 style="border-left:6px solid {bg};padding-left:12px;margin-top:2em">'
+            f'{sev.capitalize()} Findings ({len(sev_list)})</h2>'
+        )
+        for idx, f in enumerate(sev_list, 1):
+            title_esc = _esc(f["title"])
+            file_esc = _esc(f["file_path"])
+            line = f["line_start"] or "?"
+
+            # Taint path
+            taint_path_html = ""
+            if f.get("taint_path"):
+                try:
+                    steps = (json.loads(f["taint_path"])
+                             if isinstance(f["taint_path"], str) else f["taint_path"])
+                    if isinstance(steps, list):
+                        items = "".join(f"<li><code>{_esc(str(s))}</code></li>" for s in steps)
+                        taint_path_html = f"<p><strong>Taint Path:</strong></p><ol>{items}</ol>"
+                    else:
+                        taint_path_html = f"<p><strong>Taint Path:</strong> <code>{_esc(str(f['taint_path']))}</code></p>"
+                except (json.JSONDecodeError, TypeError):
+                    taint_path_html = f"<p><strong>Taint Path:</strong> <code>{_esc(str(f['taint_path']))}</code></p>"
+
+            source_sink_html = ""
+            if f.get("taint_source") or f.get("taint_sink"):
+                if f.get("taint_source"):
+                    source_sink_html += f"<p><strong>Source:</strong> <code>{_esc(f['taint_source'])}</code></p>"
+                if f.get("taint_sink"):
+                    source_sink_html += f"<p><strong>Sink:</strong> <code>{_esc(f['taint_sink'])}</code></p>"
+
+            snippet_html = ""
+            if f.get("code_snippet"):
+                snippet_html = (
+                    f'<details open><summary style="cursor:pointer;font-weight:bold">Evidence</summary>'
+                    f'<pre style="background:#1e1e1e;color:#d4d4d4;padding:12px;border-radius:4px;'
+                    f'overflow-x:auto;font-size:0.85em"><code>{_esc(f["code_snippet"])}</code></pre>'
+                    f'</details>'
+                )
+
+            meta_parts = []
+            if f.get("cwe"):
+                meta_parts.append(f'<span><strong>CWE:</strong> {_esc(f["cwe"])}</span>')
+            if f.get("owasp"):
+                meta_parts.append(f'<span><strong>OWASP:</strong> {_esc(f["owasp"])}</span>')
+            if f.get("cvss_score"):
+                cvss_str = str(f["cvss_score"])
+                if f.get("cvss_vector"):
+                    cvss_str += f' <small>({_esc(f["cvss_vector"])})</small>'
+                meta_parts.append(f'<span><strong>CVSS:</strong> {cvss_str}</span>')
+            if f.get("confidence"):
+                meta_parts.append(f'<span><strong>Confidence:</strong> {_esc(f["confidence"].capitalize())}</span>')
+
+            meta_html = (
+                '<div style="display:flex;gap:16px;flex-wrap:wrap;margin:8px 0;font-size:0.9em">'
+                + "".join(meta_parts)
+                + "</div>"
+            ) if meta_parts else ""
+
+            remediation_html = ""
+            if f.get("remediation"):
+                remediation_html = (
+                    f'<details><summary style="cursor:pointer;font-weight:bold">Remediation</summary>'
+                    f'<p style="margin-top:8px">{_esc(f["remediation"])}</p></details>'
+                )
+
+            findings_html_parts.append(
+                f'<details open style="margin:16px 0;border:1px solid #ddd;border-radius:6px">'
+                f'<summary style="padding:12px 16px;cursor:pointer;background:#f8f8f8;'
+                f'border-radius:6px;list-style:none;display:flex;align-items:center;gap:10px">'
+                f'{_badge(sev)}'
+                f'<strong style="flex:1">{idx}. {title_esc}</strong>'
+                f'<code style="font-size:0.8em;color:#666">{file_esc}:{line}</code>'
+                f'</summary>'
+                f'<div style="padding:16px">'
+                f'<p><strong>File:</strong> <code>{file_esc}</code> line {line}</p>'
+                f'{meta_html}'
+                f'{"<p>" + _esc(f["description"]) + "</p>" if f.get("description") else ""}'
+                f'{snippet_html}'
+                f'{taint_path_html}'
+                f'{source_sink_html}'
+                f'{remediation_html}'
+                f'</div>'
+                f'</details>'
+            )
+        findings_html_parts.append("</section>")
+
+    findings_html = "\n".join(findings_html_parts)
+    toc_html = "\n".join(toc_items)
+
+    # Bar chart rows
+    bar_rows = []
+    for sev in ["critical", "high", "medium", "low", "informational"]:
+        count = sev_counts.get(sev, 0)
+        if count == 0:
+            continue
+        bg, _ = sev_colors.get(sev, ("#888", "#fff"))
+        bar_rows.append(
+            f'<tr>'
+            f'<td style="padding:4px 8px;text-align:right;font-weight:bold;text-transform:capitalize">{sev}</td>'
+            f'<td style="padding:4px 8px;font-family:monospace;color:{bg}">{_bar(count)}</td>'
+            f'<td style="padding:4px 8px;font-weight:bold">{count}</td>'
+            f'</tr>'
+        )
+    bar_table = (
+        '<table style="border-collapse:collapse;margin:12px 0">'
+        + "".join(bar_rows)
+        + f'<tr><td style="padding:4px 8px;text-align:right;font-weight:bold">Total</td>'
+        f'<td></td><td style="padding:4px 8px;font-weight:bold">{len(findings)}</td></tr>'
+        + "</table>"
+    )
+
+    top_issue_html = ""
+    if findings:
+        top = findings[0]
+        top_issue_html = (
+            f'<p>Most critical issue: <strong>{_esc(top["title"])}</strong> '
+            f'in <code>{_esc(top["file_path"])}</code> '
+            f'(CVSS: {top["cvss_score"] or "N/A"}). '
+            f'Immediate remediation required for all Critical and High findings.</p>'
+        )
+
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Code-VulnScan Security Report — {_esc(run['path'])}</title>
+<style>
+  *, *::before, *::after {{ box-sizing: border-box; }}
+  body {{
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6;
+    color: #222;
+    background: #fff;
+    margin: 0;
+    padding: 0 16px 40px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }}
+  @media (prefers-color-scheme: dark) {{
+    body {{ background: #111; color: #ddd; }}
+    summary {{ background: #1e1e1e !important; color: #ddd; }}
+    details {{ border-color: #444 !important; }}
+    code {{ background: #2a2a2a; }}
+    a {{ color: #7eb8f7; }}
+  }}
+  h1 {{ border-bottom: 2px solid #333; padding-bottom: 8px; }}
+  code {{
+    background: #f0f0f0;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 0.9em;
+  }}
+  a {{ color: #0066cc; text-decoration: none; }}
+  a:hover {{ text-decoration: underline; }}
+  details > summary::-webkit-details-marker {{ display: none; }}
+  details > summary::before {{ content: "▶ "; font-size: 0.75em; }}
+  details[open] > summary::before {{ content: "▼ "; font-size: 0.75em; }}
+  nav {{ background: #f5f5f5; padding: 16px; border-radius: 6px; margin: 16px 0; }}
+  nav ul {{ margin: 0; padding-left: 20px; }}
+  .meta-bar {{ background: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 6px;
+               padding: 12px 16px; margin: 16px 0; font-size: 0.9em; }}
+</style>
+</head>
+<body>
+<h1>Security Vulnerability Report &mdash; Code-VulnScan</h1>
+<div class="meta-bar">
+  <strong>Target:</strong> <code>{_esc(run['path'])}</code>&nbsp;&nbsp;
+  <strong>Scan ID:</strong> <code>{_esc(str(run['id']))}</code>&nbsp;&nbsp;
+  <strong>Generated:</strong> {ts}&nbsp;&nbsp;
+  <strong>Tool:</strong> Code-VulnScan v1.0.0
+</div>
+
+<nav>
+  <strong>Table of Contents</strong>
+  <ul>
+    <li><a href="#summary">Executive Summary</a></li>
+    {toc_html}
+    <li><a href="#checklist">Remediation Checklist</a></li>
+  </ul>
+</nav>
+
+<section id="summary">
+  <h2>Executive Summary</h2>
+  {bar_table}
+  {top_issue_html}
+</section>
+
+{findings_html}
+
+<section id="checklist">
+  <h2>Remediation Priority Checklist</h2>
+  {"".join(
+      f'<h3>{sev.capitalize()} &mdash; Fix Immediately</h3><ul>'
+      + "".join(
+          f'<li>{_badge(sev)} {_esc(f["title"])} &mdash; '
+          f'<code>{_esc(f["file_path"])}:{f["line_start"] or "?"}</code></li>'
+          for f in by_sev[sev]
+      )
+      + "</ul>"
+      for sev in ["critical", "high", "medium"]
+      if by_sev.get(sev)
+  )}
+</section>
+
+<hr>
+<footer style="font-size:0.8em;color:#888;margin-top:24px">
+  Report generated by
+  <a href="https://github.com/Bhanunamikaze/Code-VulnScan-Skill">Code-VulnScan</a>
+  &mdash; Scan ID: {_esc(str(run['id']))} &mdash; {ts}
+</footer>
+</body>
+</html>"""
+    return html
+
+
 def generate_sarif(run, findings) -> dict:
     rules = {}
     results = []
@@ -263,7 +546,7 @@ def generate_sarif(run, findings) -> dict:
 def main():
     parser = argparse.ArgumentParser(description="Code-VulnScan report generator")
     parser.add_argument("--run-id", help="Specific run ID (default: latest)")
-    parser.add_argument("--format", choices=["markdown", "json", "sarif", "all"], default="markdown")
+    parser.add_argument("--format", choices=["markdown", "json", "sarif", "html", "all"], default="markdown")
     parser.add_argument("--min-severity", choices=["critical", "high", "medium", "low", "informational"],
                         default="medium")
     parser.add_argument("--output-dir", default=str(WORKSPACE))
@@ -278,7 +561,7 @@ def main():
 
     print(f"Generating report for run {run_id}: {len(findings)} confirmed findings", file=sys.stderr)
 
-    formats = ["markdown", "json", "sarif"] if args.format == "all" else [args.format]
+    formats = ["markdown", "json", "sarif", "html"] if args.format == "all" else [args.format]
 
     for fmt in formats:
         if fmt == "markdown":
@@ -296,6 +579,11 @@ def main():
             out_path = out_dir / f"report_{run_id}.sarif"
             out_path.write_text(json.dumps(data, indent=2))
             print(f"SARIF report:    {out_path}")
+        elif fmt == "html":
+            content = generate_html(run, findings)
+            out_path = out_dir / f"report_{run_id}.html"
+            out_path.write_text(content)
+            print(f"HTML report:     {out_path}")
 
 
 if __name__ == "__main__":
